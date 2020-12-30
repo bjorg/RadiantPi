@@ -24,9 +24,13 @@ namespace RadiantPi.Lumagen {
     public interface IRadiancePro : IDisposable {
 
         //--- Methods ---
-        Task<string> ReadInputLabel(RadianceProMemory memory, RadianceProInput input);
-        Task<string> ReadCustomModeLabel(RadianceProCustomMode customMode);
-        Task<string> ReadCmsLabel(RadianceProCms cms);
-        Task<string> ReadStyleLabel(RadianceProStyle style);
+        Task<string> GetInputLabel(RadianceProMemory memory, RadianceProInput input);
+        Task SetInputLabel(RadianceProMemory memory, RadianceProInput input, string value);
+        Task<string> GetCustomModeLabel(RadianceProCustomMode customMode);
+        Task SetCustomModeLabel(RadianceProCustomMode customMode, string value);
+        Task<string> GetCmsLabel(RadianceProCms cms);
+        Task SetCmsLabel(RadianceProCms cms, string value);
+        Task<string> GetStyleLabel(RadianceProStyle style);
+        Task SetStyleLabel(RadianceProStyle style, string value);
     }
 }

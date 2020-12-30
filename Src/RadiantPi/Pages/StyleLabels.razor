@@ -1,0 +1,36 @@
+@page "/style-labels"
+
+@inject IRadiancePro Client
+
+<h1>Style Labels</h1>
+
+<form>
+    <fieldset disabled=@StyleLabelsDisabled>
+        @for(var style = RadianceProStyle.Style0; style <= RadianceProStyle.Style7; ++style) {
+            var localStyleVar = style;
+            <div class="mb-3">
+                <Label Id=@style.ToString() Text=@($"Style {(int)style} Label") Value=@Labels[style] ValueChanged=@(value => UpdateStyleAsync(localStyleVar, value)) />
+            </div>
+        }
+    </fieldset>
+</form>
+
+@code {
+
+    //--- Properties ---
+    protected string StyleLabelsDisabled { get; set; } = "disabled";
+    protected Dictionary<RadianceProStyle, string> Labels = new Dictionary<RadianceProStyle, string>();
+
+    //--- Methods ---
+    protected override async Task OnInitializedAsync() {
+        for(var style = RadianceProStyle.Style0; style <= RadianceProStyle.Style7; ++style) {
+            Labels[style] = await Client.GetStyleLabel(style);
+        }
+        StyleLabelsDisabled = null;
+    }
+
+    protected async Task UpdateStyleAsync(RadianceProStyle style, string value) {
+        Labels[style] = value;
+        await Client.SetStyleLabel(style, value);
+    }
+}

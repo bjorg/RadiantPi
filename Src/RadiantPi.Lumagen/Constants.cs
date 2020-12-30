@@ -40,37 +40,37 @@ namespace RadiantPi.Lumagen {
 
     public enum RadianceProCustomMode {
         Undefined,
+        CustomMode0,
         CustomMode1,
         CustomMode2,
         CustomMode3,
         CustomMode4,
         CustomMode5,
         CustomMode6,
-        CustomMode7,
-        CustomMode8
+        CustomMode7
     }
 
     public enum RadianceProCms {
         Undefined,
+        Cms0,
         Cms1,
         Cms2,
         Cms3,
         Cms4,
         Cms5,
         Cms6,
-        Cms7,
-        Cms8
+        Cms7
     }
 
     public enum RadianceProStyle {
         Undefined,
+        Style0,
         Style1,
         Style2,
         Style3,
         Style4,
         Style5,
         Style6,
-        Style7,
-        Style8
+        Style7
     }
 }

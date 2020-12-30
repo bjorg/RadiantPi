@@ -26,9 +26,22 @@ using System.Threading.Tasks;
 
 namespace RadiantPi.Lumagen {
 
+    public class RadianceProClientConfig {
+
+        //--- Properties ---
+        public string PortName { get; set; }
+        public int? BaudRate { get; set; }
+        public bool Mock { get; set; }
+    }
+
     public sealed class RadianceProClient : IRadiancePro {
 
         //--- Class Methods ---
+        public static IRadiancePro Initialize(RadianceProClientConfig config)
+            => config.Mock
+                ? new RadianceProMockClient()
+                : new RadianceProClient(config.PortName, config.BaudRate ?? 9600);
+
         private static string ToCommandCode(RadianceProMemory memory)
             => memory switch {
                 RadianceProMemory.MemoryA => "A",
@@ -53,40 +66,40 @@ namespace RadiantPi.Lumagen {
 
         private static string ToCommandCode(RadianceProCustomMode customMode)
             => customMode switch {
-                RadianceProCustomMode.CustomMode1 => "0",
-                RadianceProCustomMode.CustomMode2 => "1",
-                RadianceProCustomMode.CustomMode3 => "2",
-                RadianceProCustomMode.CustomMode4 => "3",
-                RadianceProCustomMode.CustomMode5 => "4",
-                RadianceProCustomMode.CustomMode6 => "5",
-                RadianceProCustomMode.CustomMode7 => "6",
-                RadianceProCustomMode.CustomMode8 => "7",
-               _ => throw new ArgumentException("invalid custom mode selection")
+                RadianceProCustomMode.CustomMode0 => "0",
+                RadianceProCustomMode.CustomMode1 => "1",
+                RadianceProCustomMode.CustomMode2 => "2",
+                RadianceProCustomMode.CustomMode3 => "3",
+                RadianceProCustomMode.CustomMode4 => "4",
+                RadianceProCustomMode.CustomMode5 => "5",
+                RadianceProCustomMode.CustomMode6 => "6",
+                RadianceProCustomMode.CustomMode7 => "7",
+                _ => throw new ArgumentException("invalid custom mode selection")
             };
 
         private static string ToCommandCode(RadianceProCms cms)
             => cms switch {
-                RadianceProCms.Cms1 => "0",
-                RadianceProCms.Cms2 => "1",
-                RadianceProCms.Cms3 => "2",
-                RadianceProCms.Cms4 => "3",
-                RadianceProCms.Cms5 => "4",
-                RadianceProCms.Cms6 => "5",
-                RadianceProCms.Cms7 => "6",
-                RadianceProCms.Cms8 => "7",
+                RadianceProCms.Cms0 => "0",
+                RadianceProCms.Cms1 => "1",
+                RadianceProCms.Cms2 => "2",
+                RadianceProCms.Cms3 => "3",
+                RadianceProCms.Cms4 => "4",
+                RadianceProCms.Cms5 => "5",
+                RadianceProCms.Cms6 => "6",
+                RadianceProCms.Cms7 => "7",
                _ => throw new ArgumentException("invalid cms selection")
             };
 
         private static string ToCommandCode(RadianceProStyle style)
             => style switch {
-                RadianceProStyle.Style1 => "0",
-                RadianceProStyle.Style2 => "1",
-                RadianceProStyle.Style3 => "2",
-                RadianceProStyle.Style4 => "3",
-                RadianceProStyle.Style5 => "4",
-                RadianceProStyle.Style6 => "5",
-                RadianceProStyle.Style7 => "6",
-                RadianceProStyle.Style8 => "7",
+                RadianceProStyle.Style0 => "0",
+                RadianceProStyle.Style1 => "1",
+                RadianceProStyle.Style2 => "2",
+                RadianceProStyle.Style3 => "3",
+                RadianceProStyle.Style4 => "4",
+                RadianceProStyle.Style5 => "5",
+                RadianceProStyle.Style6 => "6",
+                RadianceProStyle.Style7 => "7",
                _ => throw new ArgumentException("invalid style selection")
             };
 
@@ -114,10 +127,29 @@ namespace RadiantPi.Lumagen {
         public Task PowerOffAsync() => SendAsync("$", expectResponse: false);
         public Task<string> IsPoweredOnAsync() => SendAsync("ZQS02", expectResponse: true);
 
-        public Task<string> ReadInputLabel(RadianceProMemory memory, RadianceProInput input) => SendAsync($"ZQS1{ToCommandCode(memory)}{ToCommandCode(input)}", expectResponse: true);
-        public Task<string> ReadCustomModeLabel(RadianceProCustomMode customMode) => SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true);
-        public Task<string> ReadCmsLabel(RadianceProCms cms) => SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true);
-        public Task<string> ReadStyleLabel(RadianceProStyle style) => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
+        public Task<string> GetInputLabel(RadianceProMemory memory, RadianceProInput input) => SendAsync($"ZQS1{ToCommandCode(memory)}{ToCommandCode(input)}", expectResponse: true);
+
+        public Task SetInputLabel(RadianceProMemory memory, RadianceProInput input, string value) {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> GetCustomModeLabel(RadianceProCustomMode customMode) => SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true);
+
+        public Task SetCustomModeLabel(RadianceProCustomMode customMode, string value) {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> GetCmsLabel(RadianceProCms cms) => SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true);
+
+        public Task SetCmsLabel(RadianceProCms cms, string value) {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> GetStyleLabel(RadianceProStyle style) => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
+
+        public Task SetStyleLabel(RadianceProStyle style, string value) {
+            throw new NotImplementedException();
+        }
 
         public void Dispose() {
             _mutex.Dispose();

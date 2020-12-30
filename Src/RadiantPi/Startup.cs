@@ -21,15 +21,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using RadiantPi.Lumagen;
 
 namespace RadiantPi {
 
     public class Startup {
 
         //--- Constructors ---
-        public Startup(IConfiguration configuration) {
-            Configuration = configuration;
-        }
+        public Startup(IConfiguration configuration) => Configuration = configuration;
 
         //--- Properties ---
         public IConfiguration Configuration { get; }
@@ -41,6 +40,9 @@ namespace RadiantPi {
             // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
             services.AddRazorPages();
             services.AddServerSideBlazor();
+
+            // add RadiancePro client configuration
+            services.AddSingleton<IRadiancePro>(_ => RadianceProClient.Initialize(Configuration.GetSection("RadiancePro").Get<RadianceProClientConfig>()));
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {

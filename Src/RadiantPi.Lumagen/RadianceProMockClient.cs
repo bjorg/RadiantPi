@@ -28,6 +28,7 @@ namespace RadiantPi.Lumagen {
         private Dictionary<string, string> _labels = new Dictionary<string, string>() {
 
             // default CMS labels
+            [$"{RadianceProCms.Cms0}"] = "CMS0",
             [$"{RadianceProCms.Cms1}"] = "CMS1",
             [$"{RadianceProCms.Cms2}"] = "CMS2",
             [$"{RadianceProCms.Cms3}"] = "CMS3",
@@ -35,9 +36,9 @@ namespace RadiantPi.Lumagen {
             [$"{RadianceProCms.Cms5}"] = "CMS5",
             [$"{RadianceProCms.Cms6}"] = "CMS6",
             [$"{RadianceProCms.Cms7}"] = "CMS7",
-            [$"{RadianceProCms.Cms8}"] = "CMS8",
 
             // default custom mode labels
+            [$"{RadianceProCustomMode.CustomMode0}"] = "Custom0",
             [$"{RadianceProCustomMode.CustomMode1}"] = "Custom1",
             [$"{RadianceProCustomMode.CustomMode2}"] = "Custom2",
             [$"{RadianceProCustomMode.CustomMode3}"] = "Custom3",
@@ -45,7 +46,6 @@ namespace RadiantPi.Lumagen {
             [$"{RadianceProCustomMode.CustomMode5}"] = "Custom5",
             [$"{RadianceProCustomMode.CustomMode6}"] = "Custom6",
             [$"{RadianceProCustomMode.CustomMode7}"] = "Custom7",
-            [$"{RadianceProCustomMode.CustomMode8}"] = "Custom8",
 
             // default input labels
             [$"{RadianceProMemory.MemoryA}-{RadianceProInput.Input1}"] = "Input",
@@ -82,35 +82,59 @@ namespace RadiantPi.Lumagen {
             [$"{RadianceProMemory.MemoryD}-{RadianceProInput.Input8}"] = "Input",
 
             // default style labels
+            [$"{RadianceProStyle.Style0}"] = "Style0",
             [$"{RadianceProStyle.Style1}"] = "Style1",
             [$"{RadianceProStyle.Style2}"] = "Style2",
             [$"{RadianceProStyle.Style3}"] = "Style3",
             [$"{RadianceProStyle.Style4}"] = "Style4",
             [$"{RadianceProStyle.Style5}"] = "Style5",
             [$"{RadianceProStyle.Style6}"] = "Style6",
-            [$"{RadianceProStyle.Style7}"] = "Style7",
-            [$"{RadianceProStyle.Style8}"] = "Style8"
+            [$"{RadianceProStyle.Style7}"] = "Style7"
         };
 
         //--- Methods ---
-        public Task<string> ReadCmsLabel(RadianceProCms cms) {
-            CheckNotDisposed();
-            return Task.FromResult(_labels[$"{cms}"]);
-        }
-
-        public Task<string> ReadCustomModeLabel(RadianceProCustomMode customMode) {
-            CheckNotDisposed();
-            return Task.FromResult(_labels[$"{customMode}"]);
-        }
-
-        public Task<string> ReadInputLabel(RadianceProMemory memory, RadianceProInput input) {
+        public Task<string> GetInputLabel(RadianceProMemory memory, RadianceProInput input) {
             CheckNotDisposed();
             return Task.FromResult(_labels[$"{memory}-{input}"]);
         }
 
-        public Task<string> ReadStyleLabel(RadianceProStyle style) {
+        public Task SetInputLabel(RadianceProMemory memory, RadianceProInput input, string value) {
+            CheckNotDisposed();
+            _labels[$"{memory}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
+            return Task.CompletedTask;
+        }
+
+        public Task<string> GetCustomModeLabel(RadianceProCustomMode customMode) {
+            CheckNotDisposed();
+            return Task.FromResult(_labels[$"{customMode}"]);
+        }
+
+        public Task SetCustomModeLabel(RadianceProCustomMode customMode, string value) {
+            CheckNotDisposed();
+            _labels[$"{customMode}"] = value ?? throw new ArgumentNullException(nameof(value));
+            return Task.CompletedTask;
+        }
+
+        public Task<string> GetCmsLabel(RadianceProCms cms) {
+            CheckNotDisposed();
+            return Task.FromResult(_labels[$"{cms}"]);
+        }
+
+        public Task SetCmsLabel(RadianceProCms cms, string value) {
+            CheckNotDisposed();
+            _labels[$"{cms}"] = value ?? throw new ArgumentNullException(nameof(value));
+            return Task.CompletedTask;
+        }
+
+        public Task<string> GetStyleLabel(RadianceProStyle style) {
             CheckNotDisposed();
             return Task.FromResult(_labels[$"{style}"]);
+        }
+
+        public Task SetStyleLabel(RadianceProStyle style, string value) {
+            CheckNotDisposed();
+            _labels[$"{style}"] = value ?? throw new ArgumentNullException(nameof(value));
+            return Task.CompletedTask;
         }
 
         public void Dispose() => _disposed = true;
