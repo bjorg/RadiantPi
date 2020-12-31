@@ -1,0 +1,47 @@
+@page "/custom-mode-labels"
+
+@inject IRadiancePro Client
+
+<h1>Custom Mode Labels</h1>
+
+<form>
+    <fieldset>
+        @for(var customMode = RadianceProCustomMode.CustomMode0; customMode <= RadianceProCustomMode.CustomMode7; ++customMode) {
+            var localCustomMode = customMode;
+            <div class="mb-3">
+                <Label
+                    Id=@localCustomMode.ToString()
+                    Text=@($"Style {(int)localCustomMode} Label")
+                    OriginalValue=@OriginalLabels[localCustomMode]
+                    CurrentValue=@Labels[localCustomMode]
+                    OnValueChange=@(value => Labels[localCustomMode] = value)
+                    OnClick="@(async () => await UpdateCustomModeAsync(localCustomMode))"
+                />
+            </div>
+        }
+    </fieldset>
+</form>
+
+@code {
+
+    //--- Properties ---
+    protected Dictionary<RadianceProCustomMode, string> OriginalLabels = new Dictionary<RadianceProCustomMode, string>();
+    protected Dictionary<RadianceProCustomMode, string> Labels = new Dictionary<RadianceProCustomMode, string>();
+
+    //--- Methods ---
+    protected override async Task OnInitializedAsync() {
+
+        // read all style labels from device
+        for(var customMode = RadianceProCustomMode.CustomMode0; customMode <= RadianceProCustomMode.CustomMode7; ++customMode) {
+            var label = await Client.GetCustomModeLabel(customMode);
+            Labels[customMode] = label;
+            OriginalLabels[customMode] = label;
+        }
+    }
+
+    protected async Task UpdateCustomModeAsync(RadianceProCustomMode customMode) {
+        var label = Labels[customMode];
+        await Client.SetCustomModeLabel(customMode, label);
+        OriginalLabels[customMode] = label;
+    }
+}

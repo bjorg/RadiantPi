@@ -1,0 +1,47 @@
+@page "/cms-labels"
+
+@inject IRadiancePro Client
+
+<h1>CMS Labels</h1>
+
+<form>
+    <fieldset>
+        @for(var cms = RadianceProCms.Cms0; cms <= RadianceProCms.Cms7; ++cms) {
+            var localCms = cms;
+            <div class="mb-3">
+                <Label
+                    Id=@localCms.ToString()
+                    Text=@($"Style {(int)localCms} Label")
+                    OriginalValue=@OriginalLabels[localCms]
+                    CurrentValue=@Labels[localCms]
+                    OnValueChange=@(value => Labels[localCms] = value)
+                    OnClick="@(async () => await UpdateStyleAsync(localCms))"
+                />
+            </div>
+        }
+    </fieldset>
+</form>
+
+@code {
+
+    //--- Properties ---
+    protected Dictionary<RadianceProCms, string> OriginalLabels = new Dictionary<RadianceProCms, string>();
+    protected Dictionary<RadianceProCms, string> Labels = new Dictionary<RadianceProCms, string>();
+
+    //--- Methods ---
+    protected override async Task OnInitializedAsync() {
+
+        // read all style labels from device
+        for(var cms = RadianceProCms.Cms0; cms <= RadianceProCms.Cms7; ++cms) {
+            var label = await Client.GetCmsLabel(cms);
+            Labels[cms] = label;
+            OriginalLabels[cms] = label;
+        }
+    }
+
+    protected async Task UpdateStyleAsync(RadianceProCms cms) {
+        var label = Labels[cms];
+        await Client.SetCmsLabel(cms, label);
+        OriginalLabels[cms] = label;
+    }
+}

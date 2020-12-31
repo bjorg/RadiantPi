@@ -2,20 +2,20 @@
 
 @inject IRadiancePro Client
 
-<h1>Style Labels</h1>
+<h1>CMS Labels</h1>
 
 <form>
-    <fieldset disabled=@StyleLabelsDisabled>
+    <fieldset>
         @for(var style = RadianceProStyle.Style0; style <= RadianceProStyle.Style7; ++style) {
-            var localStyleVar = style;
+            var localStyle = style;
             <div class="mb-3">
                 <Label
-                    Id=@style.ToString()
-                    Text=@($"Style {(int)style} Label")
-                    OriginalValue=@OriginalLabels[style]
-                    CurrentValue=@Labels[style]
-                    OnValueChange=@(value => Labels[localStyleVar] = value)
-                    OnClick="@(async () => await UpdateStyleAsync(localStyleVar))"
+                    Id=@localStyle.ToString()
+                    Text=@($"Style {(int)localStyle} Label")
+                    OriginalValue=@OriginalLabels[localStyle]
+                    CurrentValue=@Labels[localStyle]
+                    OnValueChange=@(value => Labels[localStyle] = value)
+                    OnClick="@(async () => await UpdateStyleAsync(localStyle))"
                 />
             </div>
         }
@@ -25,7 +25,6 @@
 @code {
 
     //--- Properties ---
-    protected bool StyleLabelsDisabled { get; set; }
     protected Dictionary<RadianceProStyle, string> OriginalLabels = new Dictionary<RadianceProStyle, string>();
     protected Dictionary<RadianceProStyle, string> Labels = new Dictionary<RadianceProStyle, string>();
 
@@ -38,7 +37,6 @@
             Labels[style] = label;
             OriginalLabels[style] = label;
         }
-        StyleLabelsDisabled = false;
     }
 
     protected async Task UpdateStyleAsync(RadianceProStyle style) {
