@@ -30,6 +30,7 @@
 
     //--- Methods ---
     protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
 
         // read all style labels from device
         for(var style = RadianceProStyle.Style0; style <= RadianceProStyle.Style7; ++style) {
