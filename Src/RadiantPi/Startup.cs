@@ -16,11 +16,13 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen;
 
 namespace RadiantPi {
@@ -42,7 +44,38 @@ namespace RadiantPi {
             services.AddServerSideBlazor();
 
             // add RadiancePro client configuration
-            services.AddSingleton<IRadiancePro>(_ => RadianceProClient.Initialize(Configuration.GetSection("RadiancePro").Get<RadianceProClientConfig>()));
+            services.AddSingleton<IRadiancePro>(_ => {
+                var config = Configuration.GetSection("RadiancePro").Get<RadianceProClientConfig>();
+                if(config == null) {
+
+                    // default to mock configuration when no configuration is found
+                    LogWarn("no 'RadiancePro' section found in appsettings.json file; defaulting to mock client configuration");
+                    config = new RadianceProClientConfig {
+                        Mock = true
+                    };
+                } else if(!config.Mock && (config.PortName == null)) {
+
+                    // find first available serial port
+                    LogInfo("no 'PortName' property specified for RadiancePro section; scanning for available serial ports");
+                    var portNames = System.IO.Ports.SerialPort.GetPortNames();
+                    if(portNames.Any()) {
+                        config.PortName = portNames.First();
+                        LogInfo($"using found serial port '{config.PortName}' for communciating with RadiancePro");
+                    } else {
+                        LogWarn($"no available serial ports fond; defaulting to mock client configuration");
+                        config = new RadianceProClientConfig {
+                            Mock = true
+                        };
+                    }
+                }
+                return RadianceProClient.Initialize(config);
+            });
+
+            // local functions
+
+            // TODO (12-31-2020, bjorg): would prefer to use ILogger, but it doesn't seem to be availble here
+            void LogInfo(string message) => System.Console.WriteLine("INFO: " + message);
+            void LogWarn(string message) => System.Console.WriteLine("WARNING: " + message);
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
