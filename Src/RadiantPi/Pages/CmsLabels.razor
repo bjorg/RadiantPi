@@ -5,16 +5,16 @@
 <h1>CMS Labels</h1>
 
 <form>
-    <fieldset>
+    <fieldset disabled=@Disabled>
         @for(var cms = RadianceProCms.Cms0; cms <= RadianceProCms.Cms7; ++cms) {
             var localCms = cms;
             <div class="mb-3">
                 <Label
                     Id=@localCms.ToString()
-                    Text=@($"Style {(int)localCms} Label")
-                    OriginalValue=@OriginalLabels[localCms]
-                    CurrentValue=@Labels[localCms]
-                    OnValueChange=@(value => Labels[localCms] = value)
+                    Text=@($"CMS {(int)localCms} Label")
+                    OriginalValue=@GetOriginalLabel(localCms)
+                    CurrentValue=@GetCurrentLabel(localCms)
+                    OnValueChange=@(value => CurrentLabels[localCms] = value)
                     OnClick="@(async () => await UpdateStyleAsync(localCms))"
                 />
             </div>
@@ -26,7 +26,8 @@
 
     //--- Properties ---
     protected Dictionary<RadianceProCms, string> OriginalLabels = new Dictionary<RadianceProCms, string>();
-    protected Dictionary<RadianceProCms, string> Labels = new Dictionary<RadianceProCms, string>();
+    protected Dictionary<RadianceProCms, string> CurrentLabels = new Dictionary<RadianceProCms, string>();
+    protected bool Disabled { get; set; } = true;
 
     //--- Methods ---
     protected override async Task OnInitializedAsync() {
@@ -35,14 +36,25 @@
         // read all style labels from device
         for(var cms = RadianceProCms.Cms0; cms <= RadianceProCms.Cms7; ++cms) {
             var label = await Client.GetCmsLabel(cms);
-            Labels[cms] = label;
+            CurrentLabels[cms] = label;
             OriginalLabels[cms] = label;
         }
+        Disabled = false;
     }
 
     protected async Task UpdateStyleAsync(RadianceProCms cms) {
-        var label = Labels[cms];
+        var label = CurrentLabels[cms];
         await Client.SetCmsLabel(cms, label);
         OriginalLabels[cms] = label;
     }
+
+    private string GetOriginalLabel(RadianceProCms cms)
+        => OriginalLabels.TryGetValue(cms, out var value)
+            ? value
+            : "(loading...)";
+
+    private string GetCurrentLabel(RadianceProCms cms)
+        => CurrentLabels.TryGetValue(cms, out var value)
+            ? value
+            : "(loading...)";
 }
