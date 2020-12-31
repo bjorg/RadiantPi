@@ -20,6 +20,7 @@ namespace RadiantPi.Lumagen {
 
     public enum RadianceProMemory {
         Undefined,
+        MemoryAll,
         MemoryA,
         MemoryB,
         MemoryC,

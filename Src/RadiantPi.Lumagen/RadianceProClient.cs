@@ -31,19 +31,25 @@ namespace RadiantPi.Lumagen {
         //--- Properties ---
         public string PortName { get; set; }
         public int? BaudRate { get; set; }
-        public bool Mock { get; set; }
+        public bool? Mock { get; set; }
+        public bool? Verbose { get; set; }
     }
 
     public sealed class RadianceProClient : IRadiancePro {
 
         //--- Class Methods ---
         public static IRadiancePro Initialize(RadianceProClientConfig config)
-            => config.Mock
+            => (config.Mock ?? false)
                 ? new RadianceProMockClient()
-                : new RadianceProClient(config.PortName, config.BaudRate ?? 9600);
+                : new RadianceProClient(config.PortName, config.BaudRate ?? 9600) {
+                    Verbose = config.Verbose ?? false
+                };
 
-        private static string ToCommandCode(RadianceProMemory memory)
+        private static string ToCommandCode(RadianceProMemory memory, bool allowAll)
             => memory switch {
+                RadianceProMemory.MemoryAll => allowAll
+                    ? "0"
+                    : throw new ArgumentException("all memory is not allowed"),
                 RadianceProMemory.MemoryA => "A",
                 RadianceProMemory.MemoryB => "B",
                 RadianceProMemory.MemoryC => "C",
@@ -103,6 +109,8 @@ namespace RadiantPi.Lumagen {
                _ => throw new ArgumentException("invalid style selection")
             };
 
+        private static string SanitizeText(string value, int maxLength) => new string(value.Take(maxLength).Select(c => (char.IsLetterOrDigit(c) ? c : ' ')).ToArray());
+
         //--- Fields ---
         private readonly SerialPort _serialPort;
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
@@ -122,34 +130,32 @@ namespace RadiantPi.Lumagen {
             Handshake = Handshake.None
         }) { }
 
+        //--- Properties ---
+        public bool Verbose { get; set; }
+
         //--- Methods ---
-        public Task PowerOnAsync() => SendAsync("%", expectResponse: false);
-        public Task PowerOffAsync() => SendAsync("$", expectResponse: false);
-        public Task<string> IsPoweredOnAsync() => SendAsync("ZQS02", expectResponse: true);
+        public Task<string> GetInputLabel(RadianceProMemory memory, RadianceProInput input)
+            => SendAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}", expectResponse: true);
 
-        public Task<string> GetInputLabel(RadianceProMemory memory, RadianceProInput input) => SendAsync($"ZQS1{ToCommandCode(memory)}{ToCommandCode(input)}", expectResponse: true);
+        public Task SetInputLabel(RadianceProMemory memory, RadianceProInput input, string value)
+            => SendAsync("ZY524" + $"{ToCommandCode(memory, allowAll: true)}{ToCommandCode(input)}{SanitizeText(value, maxLength: 10)}" + "\r", expectResponse: false);
 
-        public Task SetInputLabel(RadianceProMemory memory, RadianceProInput input, string value) {
-            throw new NotImplementedException();
-        }
+        public Task<string> GetCustomModeLabel(RadianceProCustomMode customMode)
+            => SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true);
 
-        public Task<string> GetCustomModeLabel(RadianceProCustomMode customMode) => SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true);
+        public Task SetCustomModeLabel(RadianceProCustomMode customMode, string value)
+            => SendAsync("ZY524" + $"1{ToCommandCode(customMode)}{SanitizeText(value, maxLength: 7)}" + "\r", expectResponse: false);
 
-        public Task SetCustomModeLabel(RadianceProCustomMode customMode, string value) {
-            throw new NotImplementedException();
-        }
+        public Task<string> GetCmsLabel(RadianceProCms cms)
+            => SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true);
 
-        public Task<string> GetCmsLabel(RadianceProCms cms) => SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true);
-
-        public Task SetCmsLabel(RadianceProCms cms, string value) {
-            throw new NotImplementedException();
-        }
+        public Task SetCmsLabel(RadianceProCms cms, string value)
+            => SendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
         public Task<string> GetStyleLabel(RadianceProStyle style) => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
 
-        public Task SetStyleLabel(RadianceProStyle style, string value) {
-            throw new NotImplementedException();
-        }
+        public Task SetStyleLabel(RadianceProStyle style, string value)
+            => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
         public void Dispose() {
             _mutex.Dispose();
@@ -167,6 +173,7 @@ namespace RadiantPi.Lumagen {
                 // send message, await echo response and optional response message
                 try {
                     _serialPort.DataReceived += DataReceived;
+                    Log($"sending: '{command}'");
                     await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
                     return await responseSource.Task;
                 } finally {
@@ -175,7 +182,9 @@ namespace RadiantPi.Lumagen {
 
                 // local functions
                 void DataReceived(object sender, SerialDataReceivedEventArgs args) {
-                    foreach(var c in _serialPort.ReadExisting()) {
+                    var received = _serialPort.ReadExisting();
+                    Log($"received: '{received}'");
+                    foreach(var c in received) {
 
                         // check if we're matching echoed characters
                         if(echo.Any()) {
@@ -219,6 +228,8 @@ namespace RadiantPi.Lumagen {
 
                         // check if the response has a prologue
                         if(receiveBuffer[0] == '!') {
+
+                            // skip everything until the first comma (',')
                             for(var i = 0; i < receiveBuffer.Length; ++i) {
                                 if(receiveBuffer[i] == ',') {
                                     receiveBuffer.Remove(0, i + 1);
@@ -233,6 +244,12 @@ namespace RadiantPi.Lumagen {
                 }
             } finally {
                 _mutex.Release();
+            }
+        }
+
+        private void Log(string message) {
+            if(Verbose) {
+                Console.WriteLine($"{typeof(RadianceProClient).Name}: {message}");
             }
         }
     }
