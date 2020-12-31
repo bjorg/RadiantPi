@@ -167,6 +167,11 @@ namespace RadiantPi.Lumagen {
             await _mutex.WaitAsync();
             try {
                 var echo = command;
+                if(echo.Any() && echo.Last() == '\r') {
+
+                    // append newline character when command ends with carriage-return
+                    echo += "\n";
+                }
                 TaskCompletionSource<string> responseSource = new();
                 StringBuilder receiveBuffer = new();
 
@@ -196,12 +201,12 @@ namespace RadiantPi.Lumagen {
                             }
 
                             // unexpected charater
-                            responseSource.SetException(new IOException($"unexpected charater: expected '{echo[0]}', received '{c}'"));
+                            responseSource.SetException(new IOException($"unexpected charater: expected '{echo[0]}' ({(int)echo[0]}), received '{c}' ({(int)c})"));
                             return;
                         } else if(!expectResponse) {
 
                             // unexpected extra charater, that's not good!
-                            responseSource.SetException(new IOException($"unexpected extra charater: '{c}'"));
+                            responseSource.SetException(new IOException($"unexpected extra charater: '{c}' ({(int)c})"));
                             return;
                         }
 
@@ -249,7 +254,7 @@ namespace RadiantPi.Lumagen {
 
         private void Log(string message) {
             if(Verbose) {
-                Console.WriteLine($"{typeof(RadianceProClient).Name}: {message}");
+                Console.WriteLine($"{typeof(RadianceProClient).Name}: {message.Replace("\r", "\\r").Replace("\n", "\\n")}");
             }
         }
     }
