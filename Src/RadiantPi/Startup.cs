@@ -53,7 +53,7 @@ namespace RadiantPi {
                     config = new RadianceProClientConfig {
                         Mock = true
                     };
-                } else if(!config.Mock && (config.PortName == null)) {
+                } else if(!config.Mock.GetValueOrDefault() && (config.PortName == null)) {
 
                     // find first available serial port
                     LogWarn("no 'PortName' property specified for RadiancePro section; defaulting to mock client configuration");
@@ -81,7 +81,6 @@ namespace RadiantPi {
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-            app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
             app.UseEndpoints(endpoints => {
