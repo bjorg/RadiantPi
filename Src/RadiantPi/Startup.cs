@@ -56,17 +56,10 @@ namespace RadiantPi {
                 } else if(!config.Mock && (config.PortName == null)) {
 
                     // find first available serial port
-                    LogInfo("no 'PortName' property specified for RadiancePro section; scanning for available serial ports");
-                    var portNames = System.IO.Ports.SerialPort.GetPortNames();
-                    if(portNames.Any()) {
-                        config.PortName = portNames.First();
-                        LogInfo($"using found serial port '{config.PortName}' for communciating with RadiancePro");
-                    } else {
-                        LogWarn($"no available serial ports fond; defaulting to mock client configuration");
-                        config = new RadianceProClientConfig {
-                            Mock = true
-                        };
-                    }
+                    LogWarn("no 'PortName' property specified for RadiancePro section; defaulting to mock client configuration");
+                    config = new RadianceProClientConfig {
+                        Mock = true
+                    };
                 }
                 return RadianceProClient.Initialize(config);
             });
@@ -74,7 +67,6 @@ namespace RadiantPi {
             // local functions
 
             // TODO (12-31-2020, bjorg): would prefer to use ILogger, but it doesn't seem to be availble here
-            void LogInfo(string message) => System.Console.WriteLine("INFO: " + message);
             void LogWarn(string message) => System.Console.WriteLine("WARNING: " + message);
         }
 
