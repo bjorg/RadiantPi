@@ -5,10 +5,10 @@
         <label for=@Id class="col-form-label">@Text</label>
     </div>
     <div class="col-auto">
-        <input class="form-control" id=@Id @bind=Value>
+        <input class="form-control" id=@Id value=@OriginalValue @oninput="OnInputChanged">
     </div>
     <div class="col-auto">
-        <button type="submit" class="btn btn-primary" @onclick="ButtonClickedAsync" @onclick:preventDefault>Set</button>
+        <button type="submit" class="btn btn-primary" @onclick="ButtonClickedAsync" @onclick:preventDefault disabled=@Disabled>Set</button>
     </div>
 </div>
 
@@ -23,11 +23,24 @@
     public string Id { get; set; }
 
     [Parameter]
-    public string Value { get; set; }
+    public string OriginalValue { get; set; }
 
     [Parameter]
-    public EventCallback<string> ValueChanged { get; set; }
+    public string CurrentValue { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnValueChange { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnClick { get; set; }
+
+    private bool Disabled => CurrentValue == OriginalValue;
 
     //--- Methods ---
-    private async Task ButtonClickedAsync() => await ValueChanged.InvokeAsync(Value);
+    private void OnInputChanged(ChangeEventArgs args) {
+        CurrentValue = (string)args.Value;
+        OnValueChange.InvokeAsync(CurrentValue);
+    }
+
+    private async Task ButtonClickedAsync() => await OnClick.InvokeAsync(CurrentValue);
 }
