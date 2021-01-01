@@ -15,7 +15,7 @@
                     OriginalValue=@GetOriginalLabel(localCms)
                     CurrentValue=@GetCurrentLabel(localCms)
                     OnValueChange=@(value => CurrentLabels[localCms] = value)
-                    OnClick="@(async () => await UpdateStyleAsync(localCms))"
+                    OnClick="@(async () => await UpdateCmsAsync(localCms))"
                 />
             </div>
         }
@@ -33,7 +33,7 @@
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
 
-        // read all style labels from device
+        // read all labels from device
         for(var cms = RadianceProCms.Cms0; cms <= RadianceProCms.Cms7; ++cms) {
             var label = await Client.GetCmsLabel(cms);
             CurrentLabels[cms] = label;
@@ -42,9 +42,10 @@
         Disabled = false;
     }
 
-    protected async Task UpdateStyleAsync(RadianceProCms cms) {
+    protected async Task UpdateCmsAsync(RadianceProCms cms) {
         var label = CurrentLabels[cms];
         await Client.SetCmsLabel(cms, label);
+        CurrentLabels[cms] = label;
         OriginalLabels[cms] = label;
     }
 

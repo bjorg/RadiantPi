@@ -34,7 +34,7 @@
     [Parameter]
     public EventCallback<string> OnClick { get; set; }
 
-    private bool Disabled => CurrentValue == OriginalValue;
+    private bool Disabled => !CurrentValue.Any() || (CurrentValue == OriginalValue);
 
     //--- Methods ---
     private void OnInputChanged(ChangeEventArgs args) {
