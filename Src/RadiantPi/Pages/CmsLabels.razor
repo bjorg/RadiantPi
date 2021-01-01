@@ -35,7 +35,7 @@
 
         // read all labels from device
         for(var cms = RadianceProCms.Cms0; cms <= RadianceProCms.Cms7; ++cms) {
-            var label = await Client.GetCmsLabel(cms);
+            var label = await Client.GetCmsLabelAsync(cms);
             CurrentLabels[cms] = label;
             OriginalLabels[cms] = label;
         }
@@ -44,7 +44,7 @@
 
     protected async Task UpdateCmsAsync(RadianceProCms cms) {
         var label = CurrentLabels[cms];
-        await Client.SetCmsLabel(cms, label);
+        await Client.SetCmsLabelAsync(cms, label);
         CurrentLabels[cms] = label;
         OriginalLabels[cms] = label;
     }

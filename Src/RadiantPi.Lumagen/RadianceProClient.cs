@@ -23,10 +23,11 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using RadiantPi.Lumagen.Model;
 
 namespace RadiantPi.Lumagen {
 
-    public class RadianceProClientConfig {
+    public sealed class RadianceProClientConfig {
 
         //--- Properties ---
         public string PortName { get; set; }
@@ -134,27 +135,41 @@ namespace RadiantPi.Lumagen {
         public bool Verbose { get; set; }
 
         //--- Methods ---
-        public Task<string> GetInputLabel(RadianceProMemory memory, RadianceProInput input)
+        public async Task<GetInfoResponse> GetInfoAsync() {
+            var response = await SendAsync("ZQS01", expectResponse: true);
+            var data = response.Split(",");
+            if(data.Length < 4) {
+                throw new InvalidDataException("invalid response");
+            }
+            return new GetInfoResponse {
+                ModelName = data[0],
+                SoftwareRevision = data[1],
+                ModelNumber = data[2],
+                SerialNumber = data[3]
+            };
+        }
+
+        public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
             => SendAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}", expectResponse: true);
 
-        public Task SetInputLabel(RadianceProMemory memory, RadianceProInput input, string value)
+        public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value)
             => SendAsync("ZY524" + $"{ToCommandCode(memory, allowAll: true)}{ToCommandCode(input)}{SanitizeText(value, maxLength: 10)}" + "\r", expectResponse: false);
 
-        public Task<string> GetCustomModeLabel(RadianceProCustomMode customMode)
+        public Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode)
             => SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true);
 
-        public Task SetCustomModeLabel(RadianceProCustomMode customMode, string value)
+        public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value)
             => SendAsync("ZY524" + $"1{ToCommandCode(customMode)}{SanitizeText(value, maxLength: 7)}" + "\r", expectResponse: false);
 
-        public Task<string> GetCmsLabel(RadianceProCms cms)
+        public Task<string> GetCmsLabelAsync(RadianceProCms cms)
             => SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true);
 
-        public Task SetCmsLabel(RadianceProCms cms, string value)
+        public Task SetCmsLabelAsync(RadianceProCms cms, string value)
             => SendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
-        public Task<string> GetStyleLabel(RadianceProStyle style) => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
+        public Task<string> GetStyleLabelAsync(RadianceProStyle style) => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
 
-        public Task SetStyleLabel(RadianceProStyle style, string value)
+        public Task SetStyleLabelAsync(RadianceProStyle style, string value)
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
         public void Dispose() {

@@ -35,7 +35,7 @@
 
         // read all labels from device
         for(var customMode = RadianceProCustomMode.CustomMode0; customMode <= RadianceProCustomMode.CustomMode7; ++customMode) {
-            var label = await Client.GetCustomModeLabel(customMode);
+            var label = await Client.GetCustomModeLabelAsync(customMode);
             CurrentLabels[customMode] = label;
             OriginalLabels[customMode] = label;
         }
@@ -44,7 +44,7 @@
 
     protected async Task UpdateCustomModeAsync(RadianceProCustomMode customMode) {
         var label = CurrentLabels[customMode];
-        await Client.SetCustomModeLabel(customMode, label);
+        await Client.SetCustomModeLabelAsync(customMode, label);
         CurrentLabels[customMode] = label;
         OriginalLabels[customMode] = label;
     }

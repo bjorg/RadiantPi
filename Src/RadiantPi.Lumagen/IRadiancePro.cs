@@ -18,19 +18,21 @@
 
 using System;
 using System.Threading.Tasks;
+using RadiantPi.Lumagen.Model;
 
 namespace RadiantPi.Lumagen {
 
     public interface IRadiancePro : IDisposable {
 
         //--- Methods ---
-        Task<string> GetInputLabel(RadianceProMemory memory, RadianceProInput input);
-        Task SetInputLabel(RadianceProMemory memory, RadianceProInput input, string value);
-        Task<string> GetCustomModeLabel(RadianceProCustomMode customMode);
-        Task SetCustomModeLabel(RadianceProCustomMode customMode, string value);
-        Task<string> GetCmsLabel(RadianceProCms cms);
-        Task SetCmsLabel(RadianceProCms cms, string value);
-        Task<string> GetStyleLabel(RadianceProStyle style);
-        Task SetStyleLabel(RadianceProStyle style, string value);
+        Task<GetInfoResponse> GetInfoAsync();
+        Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input);
+        Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value);
+        Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode);
+        Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value);
+        Task<string> GetCmsLabelAsync(RadianceProCms cms);
+        Task SetCmsLabelAsync(RadianceProCms cms, string value);
+        Task<string> GetStyleLabelAsync(RadianceProStyle style);
+        Task SetStyleLabelAsync(RadianceProStyle style, string value);
     }
 }

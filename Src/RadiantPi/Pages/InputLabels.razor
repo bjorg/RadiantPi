@@ -79,7 +79,7 @@
         // read all labels from device
         for(var input = RadianceProInput.Input1; input <= RadianceProInput.Input8; ++input) {
             for(var memory = RadianceProMemory.MemoryA; memory <= RadianceProMemory.MemoryD; ++memory) {
-                var label = await Client.GetInputLabel(memory, input);
+                var label = await Client.GetInputLabelAsync(memory, input);
                 CurrentLabels[(memory, input)] = label;
                 OriginalLabels[(memory, input)] = label;
 
@@ -95,7 +95,7 @@
 
     protected async Task UpdateInputAsync(RadianceProMemory memory, RadianceProInput input) {
         var label = CurrentLabels[(memory, input)];
-        await Client.SetInputLabel(memory, input, label);
+        await Client.SetInputLabelAsync(memory, input, label);
         CurrentLabels[(memory, input)] = label;
         OriginalLabels[(memory, input)] = label;
         if(memory == RadianceProMemory.MemoryAll) {

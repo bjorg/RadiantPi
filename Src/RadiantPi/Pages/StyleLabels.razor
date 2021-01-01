@@ -35,7 +35,7 @@
 
         // read all style labels from device
         for(var style = RadianceProStyle.Style0; style <= RadianceProStyle.Style7; ++style) {
-            var label = await Client.GetStyleLabel(style);
+            var label = await Client.GetStyleLabelAsync(style);
             CurrentLabels[style] = label;
             OriginalLabels[style] = label;
         }
@@ -44,7 +44,7 @@
 
     private async Task UpdateStyleAsync(RadianceProStyle style) {
         var label = CurrentLabels[style];
-        await Client.SetStyleLabel(style, label);
+        await Client.SetStyleLabelAsync(style, label);
         CurrentLabels[style] = label;
         OriginalLabels[style] = label;
     }

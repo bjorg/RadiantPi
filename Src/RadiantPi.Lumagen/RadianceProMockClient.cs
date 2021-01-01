@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using RadiantPi.Lumagen.Model;
 
 namespace RadiantPi.Lumagen {
     public sealed class RadianceProMockClient : IRadiancePro {
@@ -93,12 +94,20 @@ namespace RadiantPi.Lumagen {
         };
 
         //--- Methods ---
-        public Task<string> GetInputLabel(RadianceProMemory memory, RadianceProInput input) {
+        public async Task<GetInfoResponse> GetInfoAsync()
+            => new GetInfoResponse {
+                ModelName = "RadianceXD",
+                SoftwareRevision = "102308",
+                ModelNumber = "1009",
+                SerialNumber = "745"
+            };
+
+        public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input) {
             CheckNotDisposed();
             return Task.FromResult(_labels[$"{memory}-{input}"]);
         }
 
-        public Task SetInputLabel(RadianceProMemory memory, RadianceProInput input, string value) {
+        public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value) {
             CheckNotDisposed();
             if(memory == RadianceProMemory.MemoryAll) {
                 _labels[$"{RadianceProMemory.MemoryA}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
@@ -111,34 +120,34 @@ namespace RadiantPi.Lumagen {
             return Task.CompletedTask;
         }
 
-        public Task<string> GetCustomModeLabel(RadianceProCustomMode customMode) {
+        public Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode) {
             CheckNotDisposed();
             return Task.FromResult(_labels[$"{customMode}"]);
         }
 
-        public Task SetCustomModeLabel(RadianceProCustomMode customMode, string value) {
+        public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value) {
             CheckNotDisposed();
             _labels[$"{customMode}"] = value ?? throw new ArgumentNullException(nameof(value));
             return Task.CompletedTask;
         }
 
-        public Task<string> GetCmsLabel(RadianceProCms cms) {
+        public Task<string> GetCmsLabelAsync(RadianceProCms cms) {
             CheckNotDisposed();
             return Task.FromResult(_labels[$"{cms}"]);
         }
 
-        public Task SetCmsLabel(RadianceProCms cms, string value) {
+        public Task SetCmsLabelAsync(RadianceProCms cms, string value) {
             CheckNotDisposed();
             _labels[$"{cms}"] = value ?? throw new ArgumentNullException(nameof(value));
             return Task.CompletedTask;
         }
 
-        public Task<string> GetStyleLabel(RadianceProStyle style) {
+        public Task<string> GetStyleLabelAsync(RadianceProStyle style) {
             CheckNotDisposed();
             return Task.FromResult(_labels[$"{style}"]);
         }
 
-        public Task SetStyleLabel(RadianceProStyle style, string value) {
+        public Task SetStyleLabelAsync(RadianceProStyle style, string value) {
             CheckNotDisposed();
             _labels[$"{style}"] = value ?? throw new ArgumentNullException(nameof(value));
             return Task.CompletedTask;
