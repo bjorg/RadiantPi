@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <RootNamespace>RadiantPi</RootNamespace>
@@ -6,7 +6,7 @@
     <Deterministic>true</Deterministic>
 
     <PackageId>RadiantPi</PackageId>
-    <Version>1.0</Version>
+    <Version>0.1</Version>
     <Title>RadiantPi</Title>
     <Description>Web app for controlling a Lumagen RadiancePro from a RaspberryPi device</Description>
     <Copyright>Copyright (C) 2020</Copyright>
