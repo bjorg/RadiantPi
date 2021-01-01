@@ -100,7 +100,14 @@ namespace RadiantPi.Lumagen {
 
         public Task SetInputLabel(RadianceProMemory memory, RadianceProInput input, string value) {
             CheckNotDisposed();
-            _labels[$"{memory}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
+            if(memory == RadianceProMemory.MemoryAll) {
+                _labels[$"{RadianceProMemory.MemoryA}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
+                _labels[$"{RadianceProMemory.MemoryB}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
+                _labels[$"{RadianceProMemory.MemoryC}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
+                _labels[$"{RadianceProMemory.MemoryD}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
+            } else {
+                _labels[$"{memory}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
+            }
             return Task.CompletedTask;
         }
 
