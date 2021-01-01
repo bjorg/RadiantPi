@@ -6,7 +6,7 @@ RadianPi is a web application for controlling a Lumagen RadiancePro from a Raspb
 
 ## Features
 
-* See model number and software revision
+* See model number and software revision.
 * Edit labels for inputs, custom modes, CMS, and styles.
 
 ## App Setup
