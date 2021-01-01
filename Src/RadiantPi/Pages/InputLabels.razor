@@ -1,0 +1,107 @@
+@page "/input-labels"
+
+@inject IRadiancePro Client
+
+<h1>Input Labels</h1>
+
+<form>
+    <fieldset disabled=@Disabled>
+        <legend>All Memories</legend>
+        @for(var input = RadianceProInput.Input1; input <= RadianceProInput.Input8; ++input) {
+            var localInput = input;
+            <div class="mb-3">
+                <Label
+                    Id=@($"{localInput}")
+                    Text=@($"Input {(int)localInput} Label")
+                    OriginalValue=@GetOriginalLabel(RadianceProMemory.MemoryAll, localInput)
+                    CurrentValue=@GetCurrentLabel(RadianceProMemory.MemoryAll, localInput)
+                    OnValueChange=@(value => CurrentLabels[(RadianceProMemory.MemoryAll, localInput)] = value)
+                    OnClick="@(async () => await UpdateInputAsync(RadianceProMemory.MemoryAll, localInput))"
+                />
+            </div>
+        }
+
+        <legend>Per Memory</legend>
+        @for(var input = RadianceProInput.Input1; input <= RadianceProInput.Input8; ++input) {
+            var localInput = input;
+            @for(var memory = RadianceProMemory.MemoryA; memory <= RadianceProMemory.MemoryD; ++memory) {
+                var localMemory = memory;
+                <div class="mb-3">
+                    <Label
+                        Id=@($"{localInput}{localMemory}")
+                        Text=@($"Input {(int)localInput}{localMemory.ToString().Substring(6)} Label")
+                        OriginalValue=@GetOriginalLabel(localMemory, localInput)
+                        CurrentValue=@GetCurrentLabel(localMemory, localInput)
+                        OnValueChange=@(value => CurrentLabels[(localMemory, localInput)] = value)
+                        OnClick="@(async () => await UpdateInputAsync(localMemory, localInput))"
+                    />
+                </div>
+            }
+        }
+    </fieldset>
+</form>
+
+
+
+@code {
+
+    //--- Properties ---
+    protected Dictionary<(RadianceProMemory, RadianceProInput), string> OriginalLabels = new Dictionary<(RadianceProMemory, RadianceProInput), string>();
+    protected Dictionary<(RadianceProMemory, RadianceProInput), string> CurrentLabels = new Dictionary<(RadianceProMemory, RadianceProInput), string>();
+    protected bool Disabled { get; set; } = true;
+
+    //--- Methods ---
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+
+        // read all labels from device
+        for(var input = RadianceProInput.Input1; input <= RadianceProInput.Input8; ++input) {
+            for(var memory = RadianceProMemory.MemoryA; memory <= RadianceProMemory.MemoryD; ++memory) {
+                var label = await Client.GetInputLabel(memory, input);
+                CurrentLabels[(memory, input)] = label;
+                OriginalLabels[(memory, input)] = label;
+
+                // use value from first memory as default for all memories
+                if(memory == RadianceProMemory.MemoryA) {
+                    CurrentLabels[(RadianceProMemory.MemoryAll, input)] = label;
+                    OriginalLabels[(RadianceProMemory.MemoryAll, input)] = label;
+                }
+            }
+        }
+        Disabled = false;
+    }
+
+    protected async Task UpdateInputAsync(RadianceProMemory memory, RadianceProInput input) {
+        var label = CurrentLabels[(memory, input)];
+        await Client.SetInputLabel(memory, input, label);
+        CurrentLabels[(memory, input)] = label;
+        OriginalLabels[(memory, input)] = label;
+        if(memory == RadianceProMemory.MemoryAll) {
+
+            // update each memory
+            CurrentLabels[(RadianceProMemory.MemoryA, input)] = label;
+            OriginalLabels[(RadianceProMemory.MemoryA, input)] = label;
+            CurrentLabels[(RadianceProMemory.MemoryB, input)] = label;
+            OriginalLabels[(RadianceProMemory.MemoryB, input)] = label;
+            CurrentLabels[(RadianceProMemory.MemoryC, input)] = label;
+            OriginalLabels[(RadianceProMemory.MemoryC, input)] = label;
+            CurrentLabels[(RadianceProMemory.MemoryD, input)] = label;
+            OriginalLabels[(RadianceProMemory.MemoryD, input)] = label;
+        } else if(memory == RadianceProMemory.MemoryA) {
+
+            // use memory A as default for all memories
+            CurrentLabels[(RadianceProMemory.MemoryAll, input)] = label;
+            OriginalLabels[(RadianceProMemory.MemoryAll, input)] = label;
+        }
+    }
+
+    private string GetOriginalLabel(RadianceProMemory memory, RadianceProInput input)
+        => OriginalLabels.TryGetValue((memory, input), out var value)
+            ? value
+            : "(loading...)";
+
+    private string GetCurrentLabel(RadianceProMemory memory, RadianceProInput input)
+        => CurrentLabels.TryGetValue((memory, input), out var value)
+            ? value
+            : "(loading...)";
+}
