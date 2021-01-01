@@ -45,6 +45,7 @@
     protected async Task UpdateCustomModeAsync(RadianceProCustomMode customMode) {
         var label = CurrentLabels[customMode];
         await Client.SetCustomModeLabelAsync(customMode, label);
+        label = await Client.GetCustomModeLabelAsync(customMode);
         CurrentLabels[customMode] = label;
         OriginalLabels[customMode] = label;
     }

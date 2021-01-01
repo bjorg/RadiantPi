@@ -45,6 +45,7 @@
     protected async Task UpdateCmsAsync(RadianceProCms cms) {
         var label = CurrentLabels[cms];
         await Client.SetCmsLabelAsync(cms, label);
+        label = await Client.GetCmsLabelAsync(cms);
         CurrentLabels[cms] = label;
         OriginalLabels[cms] = label;
     }

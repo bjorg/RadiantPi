@@ -45,6 +45,7 @@
     private async Task UpdateStyleAsync(RadianceProStyle style) {
         var label = CurrentLabels[style];
         await Client.SetStyleLabelAsync(style, label);
+        label = await Client.GetStyleLabelAsync(style);
         CurrentLabels[style] = label;
         OriginalLabels[style] = label;
     }

@@ -24,6 +24,9 @@ using RadiantPi.Lumagen.Model;
 namespace RadiantPi.Lumagen {
     public sealed class RadianceProMockClient : IRadiancePro {
 
+        //--- Class Methods ---
+        private static string Truncate(string value, int maxLength) => value.Substring(0, Math.Min(value.Length, maxLength));
+
         //--- Fields ---
         private bool _disposed;
         private Dictionary<string, string> _labels = new Dictionary<string, string>() {
@@ -109,13 +112,14 @@ namespace RadiantPi.Lumagen {
 
         public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value) {
             CheckNotDisposed();
+            value = Truncate(value ?? throw new ArgumentNullException(nameof(value)), maxLength: 10);
             if(memory == RadianceProMemory.MemoryAll) {
-                _labels[$"{RadianceProMemory.MemoryA}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
-                _labels[$"{RadianceProMemory.MemoryB}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
-                _labels[$"{RadianceProMemory.MemoryC}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
-                _labels[$"{RadianceProMemory.MemoryD}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
+                _labels[$"{RadianceProMemory.MemoryA}-{input}"] = value;
+                _labels[$"{RadianceProMemory.MemoryB}-{input}"] = value;
+                _labels[$"{RadianceProMemory.MemoryC}-{input}"] = value;
+                _labels[$"{RadianceProMemory.MemoryD}-{input}"] = value;
             } else {
-                _labels[$"{memory}-{input}"] = value ?? throw new ArgumentNullException(nameof(value));
+                _labels[$"{memory}-{input}"] = value;
             }
             return Task.CompletedTask;
         }
@@ -127,7 +131,8 @@ namespace RadiantPi.Lumagen {
 
         public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value) {
             CheckNotDisposed();
-            _labels[$"{customMode}"] = value ?? throw new ArgumentNullException(nameof(value));
+            value = Truncate(value ?? throw new ArgumentNullException(nameof(value)), maxLength: 7);
+            _labels[$"{customMode}"] = value;
             return Task.CompletedTask;
         }
 
@@ -138,7 +143,8 @@ namespace RadiantPi.Lumagen {
 
         public Task SetCmsLabelAsync(RadianceProCms cms, string value) {
             CheckNotDisposed();
-            _labels[$"{cms}"] = value ?? throw new ArgumentNullException(nameof(value));
+            value = Truncate(value ?? throw new ArgumentNullException(nameof(value)), maxLength: 8);
+            _labels[$"{cms}"] = value;
             return Task.CompletedTask;
         }
 
@@ -149,7 +155,8 @@ namespace RadiantPi.Lumagen {
 
         public Task SetStyleLabelAsync(RadianceProStyle style, string value) {
             CheckNotDisposed();
-            _labels[$"{style}"] = value ?? throw new ArgumentNullException(nameof(value));
+            value = Truncate(value ?? throw new ArgumentNullException(nameof(value)), maxLength: 8);
+            _labels[$"{style}"] = value;
             return Task.CompletedTask;
         }
 

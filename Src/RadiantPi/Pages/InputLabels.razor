@@ -78,42 +78,36 @@
 
         // read all labels from device
         for(var input = RadianceProInput.Input1; input <= RadianceProInput.Input8; ++input) {
+            var allInputLabels = new HashSet<string>();
             for(var memory = RadianceProMemory.MemoryA; memory <= RadianceProMemory.MemoryD; ++memory) {
                 var label = await Client.GetInputLabelAsync(memory, input);
                 CurrentLabels[(memory, input)] = label;
                 OriginalLabels[(memory, input)] = label;
-
-                // use value from first memory as default for all memories
-                if(memory == RadianceProMemory.MemoryA) {
-                    CurrentLabels[(RadianceProMemory.MemoryAll, input)] = label;
-                    OriginalLabels[(RadianceProMemory.MemoryAll, input)] = label;
-                }
+                allInputLabels.Add(label);
             }
         }
+        DetermineLabelsForAllMemories();
         Disabled = false;
     }
 
     protected async Task UpdateInputAsync(RadianceProMemory memory, RadianceProInput input) {
         var label = CurrentLabels[(memory, input)];
         await Client.SetInputLabelAsync(memory, input, label);
-        CurrentLabels[(memory, input)] = label;
-        OriginalLabels[(memory, input)] = label;
         if(memory == RadianceProMemory.MemoryAll) {
-
-            // update each memory
-            CurrentLabels[(RadianceProMemory.MemoryA, input)] = label;
-            OriginalLabels[(RadianceProMemory.MemoryA, input)] = label;
-            CurrentLabels[(RadianceProMemory.MemoryB, input)] = label;
-            OriginalLabels[(RadianceProMemory.MemoryB, input)] = label;
-            CurrentLabels[(RadianceProMemory.MemoryC, input)] = label;
-            OriginalLabels[(RadianceProMemory.MemoryC, input)] = label;
-            CurrentLabels[(RadianceProMemory.MemoryD, input)] = label;
-            OriginalLabels[(RadianceProMemory.MemoryD, input)] = label;
-        } else if(memory == RadianceProMemory.MemoryA) {
-
-            // use memory A as default for all memories
+            label = await Client.GetInputLabelAsync(RadianceProMemory.MemoryA, input);
             CurrentLabels[(RadianceProMemory.MemoryAll, input)] = label;
             OriginalLabels[(RadianceProMemory.MemoryAll, input)] = label;
+
+            // also update each individual memory
+            UpdateLabel(RadianceProMemory.MemoryA, input, label);
+            UpdateLabel(RadianceProMemory.MemoryB, input, label);
+            UpdateLabel(RadianceProMemory.MemoryC, input, label);
+            UpdateLabel(RadianceProMemory.MemoryD, input, label);
+        } else {
+            label = await Client.GetInputLabelAsync(memory, input);
+            CurrentLabels[(memory, input)] = label;
+            OriginalLabels[(memory, input)] = label;
+            DetermineLabelsForAllMemories();
         }
     }
 
@@ -126,4 +120,32 @@
         => CurrentLabels.TryGetValue((memory, input), out var value)
             ? value
             : "(loading...)";
+
+    private void DetermineLabelsForAllMemories() {
+        for(var input = RadianceProInput.Input1; input <= RadianceProInput.Input8; ++input) {
+            var allInputLabels = new HashSet<string>();
+            for(var memory = RadianceProMemory.MemoryA; memory <= RadianceProMemory.MemoryD; ++memory) {
+                allInputLabels.Add(OriginalLabels[(memory, input)]);
+            }
+
+            // check if all memories for the same input have the same label
+            if(allInputLabels.Count == 1) {
+                UpdateLabel(RadianceProMemory.MemoryAll, input, allInputLabels.First());
+            } else {
+                UpdateLabel(RadianceProMemory.MemoryAll, input, "");
+            }
+        }
+    }
+
+    private void UpdateLabel(RadianceProMemory memory, RadianceProInput input, string label) {
+        if(
+            !CurrentLabels.TryGetValue((memory, input), out var currentLabel)
+            || (currentLabel == OriginalLabels[(memory, input)])
+        ) {
+
+            // update current label when value was not modified
+            CurrentLabels[(memory, input)] = label;
+        }
+        OriginalLabels[(memory, input)] = label;
+    }
 }
