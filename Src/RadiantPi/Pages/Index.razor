@@ -1,0 +1,48 @@
+@page "/"
+
+@using RadiantPi.Lumagen.Model
+
+@inject IRadiancePro Client
+
+<h1>Device Information</h1>
+
+<form>
+    <fieldset disabled=@Disabled>
+        @RenderLabel("model-name", "Model Name", Info.ModelName)
+        @RenderLabel("model-nr", "Model Nr", Info.ModelNumber)
+        @RenderLabel("serial-nr", "Serial Nr", Info.SerialNumber)
+        @RenderLabel("software-revision", "Software", Info.SoftwareRevision)
+    </fieldset>
+</form>
+
+@code {
+
+    //--- Properties ---
+    protected bool Disabled { get; set; } = true;
+    protected GetInfoResponse Info { get; set; } = new GetInfoResponse {
+        ModelName = "(loading...)",
+        ModelNumber = "(loading...)",
+        SerialNumber = "(loading...)",
+        SoftwareRevision = "(loading...)"
+    };
+
+    //--- Methods ---
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+        Info = await Client.GetInfoAsync();
+        Disabled = false;
+    }
+
+    protected RenderFragment RenderLabel(string id, string title, string value) {
+        return @<div class="mb-3">
+            <div class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label for=@id class="col-form-label">@title</label>
+                </div>
+                <div class="col-auto">
+                    <input class="form-control" id=@id value=@value readonly>
+                </div>
+            </div>
+       </div>;
+    }
+}

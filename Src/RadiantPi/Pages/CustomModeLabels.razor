@@ -1,0 +1,61 @@
+@page "/custom-mode-labels"
+
+@inject IRadiancePro Client
+
+<h1>Custom Mode Labels</h1>
+
+<form>
+    <fieldset disabled=@Disabled>
+        @for(var customMode = RadianceProCustomMode.CustomMode0; customMode <= RadianceProCustomMode.CustomMode7; ++customMode) {
+            var localCustomMode = customMode;
+            <div class="mb-3">
+                <Label
+                    Id=@localCustomMode.ToString()
+                    Text=@($"Custom Mode {(int)localCustomMode} Label")
+                    OriginalValue=@GetOriginalLabel(localCustomMode)
+                    CurrentValue=@GetCurrentLabel(localCustomMode)
+                    OnValueChange=@(value => CurrentLabels[localCustomMode] = value)
+                    OnClick="@(async () => await UpdateCustomModeAsync(localCustomMode))"
+                />
+            </div>
+        }
+    </fieldset>
+</form>
+
+@code {
+
+    //--- Properties ---
+    protected Dictionary<RadianceProCustomMode, string> OriginalLabels = new Dictionary<RadianceProCustomMode, string>();
+    protected Dictionary<RadianceProCustomMode, string> CurrentLabels = new Dictionary<RadianceProCustomMode, string>();
+    protected bool Disabled { get; set; } = true;
+
+    //--- Methods ---
+    protected override async Task OnInitializedAsync() {
+        await base.OnInitializedAsync();
+
+        // read all labels from device
+        for(var customMode = RadianceProCustomMode.CustomMode0; customMode <= RadianceProCustomMode.CustomMode7; ++customMode) {
+            var label = await Client.GetCustomModeLabelAsync(customMode);
+            CurrentLabels[customMode] = label;
+            OriginalLabels[customMode] = label;
+        }
+        Disabled = false;
+    }
+
+    protected async Task UpdateCustomModeAsync(RadianceProCustomMode customMode) {
+        var label = CurrentLabels[customMode];
+        await Client.SetCustomModeLabelAsync(customMode, label);
+        CurrentLabels[customMode] = label;
+        OriginalLabels[customMode] = label;
+    }
+
+    private string GetOriginalLabel(RadianceProCustomMode customMode)
+        => OriginalLabels.TryGetValue(customMode, out var value)
+            ? value
+            : "(loading...)";
+
+    private string GetCurrentLabel(RadianceProCustomMode customMode)
+        => CurrentLabels.TryGetValue(customMode, out var value)
+            ? value
+            : "(loading...)";
+}

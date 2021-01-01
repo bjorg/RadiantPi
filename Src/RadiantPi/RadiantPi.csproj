@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>RadiantPi</RootNamespace>
+    <NoWarn>CS1998</NoWarn>
+    <Deterministic>true</Deterministic>
+
+    <PackageId>RadiantPi</PackageId>
+    <Version>1.0</Version>
+    <Title>RadiantPi</Title>
+    <Description>Web app for controlling a Lumagen RadiancePro from a RaspberryPi device</Description>
+    <Copyright>Copyright (C) 2020</Copyright>
+    <Authors>Bjorg</Authors>
+
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/bjorg/RadiantPi</PackageProjectUrl>
+    <PackageTags>Lumagen;RadiancePro;Blazor</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../RadiantPi.Lumagen/RadiantPi.Lumagen.csproj" />
+  </ItemGroup>
+</Project>
