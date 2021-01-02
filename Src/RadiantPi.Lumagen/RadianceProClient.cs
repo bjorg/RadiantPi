@@ -22,6 +22,8 @@ using System.IO;
 using System.IO.Ports;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using RadiantPi.Lumagen.Model;
@@ -142,12 +144,12 @@ namespace RadiantPi.Lumagen {
             if(data.Length < 4) {
                 throw new InvalidDataException("invalid response");
             }
-            return new GetDeviceInfoResponse {
+            return LogResponse(new GetDeviceInfoResponse {
                 ModelName = data[0],
                 SoftwareRevision = data[1],
                 ModelNumber = data[2],
                 SerialNumber = data[3]
-            };
+            });
         }
 
         public async Task<GetModeInfoResponse> GetModeInfoAsync() {
@@ -156,7 +158,7 @@ namespace RadiantPi.Lumagen {
             if(data.Length < 21) {
                 throw new InvalidDataException("invalid response");
             }
-            return new GetModeInfoResponse {
+            return LogResponse(new GetModeInfoResponse {
                 InputStatus = data[0] switch {
                     "0" => RadianceProInputStatus.NoSource,
                     "1" => RadianceProInputStatus.ActiveVideo,
@@ -240,7 +242,7 @@ namespace RadiantPi.Lumagen {
                 },
                 VirtualInputSelected = uint.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture),
                 PhysicalInputSelected = uint.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture)
-            };
+            });
         }
 
         public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
@@ -371,6 +373,19 @@ namespace RadiantPi.Lumagen {
                 }));
                 Console.WriteLine($"{typeof(RadianceProClient).Name}: {escapedMessage}");
             }
+        }
+
+        private T LogResponse<T>(T response) {
+            if(Verbose) {
+                var serializedResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions {
+                    WriteIndented = true,
+                    Converters = {
+                        new JsonStringEnumConverter()
+                    }
+                });
+                Console.WriteLine($"{typeof(RadianceProClient).Name} response: {serializedResponse}");
+            }
+            return response;
         }
     }
 }

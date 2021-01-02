@@ -8,10 +8,10 @@
 
 <form>
     <fieldset disabled=@Disabled>
-        @RenderLabel("model-name", "Model Name", Info.ModelName)
-        @RenderLabel("model-nr", "Model Nr", Info.ModelNumber)
-        @RenderLabel("serial-nr", "Serial Nr", Info.SerialNumber)
-        @RenderLabel("software-revision", "Software", Info.SoftwareRevision)
+        @RenderLabel("model-name", "Model Name", DeviceInfo.ModelName)
+        @RenderLabel("model-nr", "Model Nr", DeviceInfo.ModelNumber)
+        @RenderLabel("serial-nr", "Serial Nr", DeviceInfo.SerialNumber)
+        @RenderLabel("software-revision", "Software", DeviceInfo.SoftwareRevision)
     </fieldset>
 </form>
 
@@ -19,17 +19,42 @@
 
     //--- Properties ---
     protected bool Disabled { get; set; } = true;
-    protected GetDeviceInfoResponse Info { get; set; } = new GetDeviceInfoResponse {
+    protected GetDeviceInfoResponse DeviceInfo { get; set; } = new GetDeviceInfoResponse {
         ModelName = "(loading...)",
         ModelNumber = "(loading...)",
         SerialNumber = "(loading...)",
         SoftwareRevision = "(loading...)"
     };
 
+    protected GetModeInfoResponse ModeInfo { get; set; } = new GetModeInfoResponse {
+        ActiveInputConfigNumber = "(loading...)",
+        InputStatus = RadianceProInputStatus.Undefined,
+        Output3DMode = RadiancePro3D.Undefined,
+        OutputAspectRatio = "(loading...)",
+        OutputCms = RadianceProCms.Undefined,
+        OutputColorSpace = RadianceProColorSpace.Undefined,
+        OutputEnabled = 0,
+        OutputNonLinearStretchActive = false,
+        OutputStyle = RadianceProStyle.Undefined,
+        OutputVerticalRate = "(loading...)",
+        OutputVerticalResolution = "(loading...)",
+        OutputVideoMode = RadianceProVideoMode.Undefined,
+        PhysicalInputSelected = 0,
+        Source3DMode = RadiancePro3D.Undefined,
+        SourceContentAspectRatio = "(loading...)",
+        SourceDynamicRange = RadianceProDynamicRange.Undefined,
+        SourceRasterAspectRatio = "(loading...)",
+        SourceVerticalRate = "(loading...)",
+        SourceVerticalResolution = "(loading...)",
+        SourceVideoMode = RadianceProVideoMode.Undefined,
+        VirtualInputSelected = 0
+    };
+
     //--- Methods ---
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        Info = await Client.GetDeviceInfoAsync();
+        DeviceInfo = await Client.GetDeviceInfoAsync();
+        ModeInfo = await Client.GetModeInfoAsync();
         Disabled = false;
     }
 
