@@ -118,10 +118,13 @@ namespace RadiantPi.Lumagen {
         //--- Fields ---
         private readonly SerialPort _serialPort;
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
+        private readonly StringBuilder _accumulator = new StringBuilder();
+        private event EventHandler<string> _responseReceivedEvent;
 
         //--- Constructors ---
         public RadianceProClient(SerialPort serialPort) {
             _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
+            _serialPort.DataReceived += UnsolicitedDataReceived;
             _serialPort.Open();
         }
 
@@ -269,6 +272,7 @@ namespace RadiantPi.Lumagen {
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
         public void Dispose() {
+            _serialPort.DataReceived -= UnsolicitedDataReceived;
             _mutex.Dispose();
             _serialPort.Dispose();
         }
@@ -360,6 +364,50 @@ namespace RadiantPi.Lumagen {
                 }
             } finally {
                 _mutex.Release();
+            }
+        }
+
+        private void UnsolicitedDataReceived(object sender, SerialDataReceivedEventArgs args) {
+            var received = _serialPort.ReadExisting();
+            Log($"received: '{received}'");
+            var receivedParts = received.Split("\r\n").ToList();
+            while(receivedParts.Any()) {
+
+                // process first item in the list of received fragments
+                var receivedPart = receivedParts.First();
+                receivedParts.RemoveAt(0);
+                if(receivedPart.Length == 0) {
+
+                    // found a <CR><LF> separator; keep going
+                    continue;
+                }
+
+                // check if a new message was found
+                if(_accumulator.Length == 0) {
+
+                    // find beginning of a new message (!)
+                    var eventParts = receivedPart.Split('!', 2);
+                    if(eventParts.Length > 1) {
+                        _accumulator.Append("!");
+
+                        // insert remainder as a new fragment
+                        receivedParts.Insert(0, eventParts[1]);
+                    }
+                } else {
+
+                    // append continuation to previously received message
+                    _accumulator.Append(receivedPart);
+
+                    // if more fragments exist; we have found a message separator
+                    if(receivedParts.Any()) {
+
+                        // emit current fragment as an event
+                        var message = _accumulator.ToString();
+                        _accumulator.Clear();
+                        Log($"dispatching: '{message}'");
+                        _responseReceivedEvent?.Invoke(this, message);
+                    }
+                }
             }
         }
 
