@@ -1,6 +1,6 @@
 /*
  * RadiantPi.Lumagen - Communication client for Lumagen RadiancePro
- * Copyright (C) 2020 - Steve G. Bjorg
+ * Copyright (C) 2020-2021 - Steve G. Bjorg
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by the

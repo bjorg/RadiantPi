@@ -9,7 +9,7 @@
     <Version>1.0</Version>
     <Title>RadiantPi.Lumagen</Title>
     <Description>Communication client for Lumagen RadiancePro</Description>
-    <Copyright>Copyright (C) 2020</Copyright>
+    <Copyright>Copyright (C) 2020-2021</Copyright>
     <Authors>Bjorg</Authors>
 
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>

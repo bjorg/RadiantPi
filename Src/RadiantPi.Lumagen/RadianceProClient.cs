@@ -1,6 +1,6 @@
 ﻿/*
  * RadiantPi.Lumagen - Communication client for Lumagen RadiancePro
- * Copyright (C) 2020 - Steve G. Bjorg
+ * Copyright (C) 2020-2021 - Steve G. Bjorg
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Affero General Public License as published by the
@@ -136,7 +136,9 @@ namespace RadiantPi.Lumagen {
             DataBits = 8,
             Parity = Parity.None,
             StopBits = StopBits.One,
-            Handshake = Handshake.None
+            Handshake = Handshake.None,
+            ReadTimeout = 100,
+            WriteTimeout = 100
         }) { }
 
         //--- Properties ---
@@ -188,6 +190,11 @@ namespace RadiantPi.Lumagen {
         public void Dispose() {
             _serialPort.DataReceived -= SerialDataReceived;
             _mutex.Dispose();
+            if(_serialPort.IsOpen) {
+                _serialPort.DiscardInBuffer();
+                _serialPort.DiscardOutBuffer();
+                _serialPort.Close();
+            }
             _serialPort.Dispose();
         }
 
