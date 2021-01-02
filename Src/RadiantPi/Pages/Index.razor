@@ -4,16 +4,51 @@
 
 @inject IRadiancePro Client
 
-<h1>Device Information</h1>
+<h1>Status</h1>
 
+<h2>Device</h2>
 <form>
     <fieldset disabled=@Disabled>
-        @RenderLabel("model-name", "Model Name", DeviceInfo.ModelName)
-        @RenderLabel("model-nr", "Model Nr", DeviceInfo.ModelNumber)
-        @RenderLabel("serial-nr", "Serial Nr", DeviceInfo.SerialNumber)
-        @RenderLabel("software-revision", "Software", DeviceInfo.SoftwareRevision)
+        @RenderLabel("device-model-name", "Model Name", DeviceInfo.ModelName)
+        @RenderLabel("device-model-nr", "Model Nr", DeviceInfo.ModelNumber)
+        @RenderLabel("device-serial-nr", "Serial Nr", DeviceInfo.SerialNumber)
+        @RenderLabel("device-software-revision", "Software", DeviceInfo.SoftwareRevision)
     </fieldset>
 </form>
+
+<h2>Input</h2>
+<form>
+    <fieldset disabled=@Disabled>
+        @RenderLabel("input-status", "Input Status", ModeInfo.InputStatus.ToString())
+        @RenderLabel("input-active-config", "Active Configuration", ModeInfo.ActiveInputConfigNumber)
+        @RenderLabel("input-physical", "Physical Input", ModeInfo.PhysicalInputSelected.ToString())
+        @RenderLabel("input-virtual", "Virtual Input", ModeInfo.VirtualInputSelected.ToString())
+        @RenderLabel("source-3d-mode", "3D Mode", ModeInfo.Source3DMode.ToString())
+        @RenderLabel("source-content-aspect-ratio", "Content AR", ModeInfo.SourceContentAspectRatio)
+        @RenderLabel("source-dynamic-range", "Dynamic Range", ModeInfo.SourceDynamicRange.ToString())
+        @RenderLabel("source-raster-aspect-ratio", "Raster AR", ModeInfo.SourceRasterAspectRatio)
+        @RenderLabel("source-vertical-refresh-rate", "Refresh Rate", ModeInfo.SourceVerticalRate)
+        @RenderLabel("source-vertical-resolution", "Vertical Resolution", ModeInfo.SourceVerticalResolution)
+        @RenderLabel("source-video-mode", "Video Mode", ModeInfo.SourceVideoMode.ToString())
+    </fieldset>
+</form>
+
+<h2>Output</h2>
+<form>
+    <fieldset disabled=@Disabled>
+        @RenderLabel("output-3d-mode", "3D Mode", ModeInfo.Output3DMode.ToString())
+        @RenderLabel("output-aspect-ratio", "Aspect Ratio", ModeInfo.OutputAspectRatio)
+        @RenderLabel("output-cms", "CMS", ModeInfo.OutputCms.ToString())
+        @RenderLabel("output-color-space", "Color Space", ModeInfo.OutputColorSpace.ToString())
+        @RenderLabel("output-enabled", "Outputs", Convert.ToString(ModeInfo.OutputEnabled, 2))
+        @RenderLabel("output-nls", "NLS", ModeInfo.OutputNonLinearStretchActive ? "on" : "off")
+        @RenderLabel("output-style", "Style", ModeInfo.OutputStyle.ToString())
+        @RenderLabel("output-vertical-refresh-rate", "Refresh Rate", ModeInfo.OutputVerticalRate)
+        @RenderLabel("output-vertical-resolution", "Vertial Resolution", ModeInfo.OutputVerticalResolution)
+        @RenderLabel("output-video-mode", "Video Mode", ModeInfo.OutputVideoMode.ToString())
+    </fieldset>
+</form>
+
 
 @code {
 
