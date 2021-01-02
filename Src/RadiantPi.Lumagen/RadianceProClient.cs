@@ -236,8 +236,8 @@ namespace RadiantPi.Lumagen {
                     string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
                 },
                 OutputVideoMode = data[18] switch {
-                    "i" => RadianceProVideoMode.Interlaced,
-                    "p" => RadianceProVideoMode.Progressive,
+                    "I" => RadianceProVideoMode.Interlaced,
+                    "P" => RadianceProVideoMode.Progressive,
                     string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
                 },
                 VirtualInputSelected = uint.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture),
@@ -371,7 +371,7 @@ namespace RadiantPi.Lumagen {
                     '\r' => "\\r",
                     _ => $"\\u{(int)c:X4}"
                 }));
-                Console.WriteLine($"{typeof(RadianceProClient).Name}: {escapedMessage}");
+                Console.WriteLine($"{typeof(RadianceProClient).Name} {escapedMessage}");
             }
         }
 
