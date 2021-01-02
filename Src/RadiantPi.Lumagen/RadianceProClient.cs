@@ -116,6 +116,7 @@ namespace RadiantPi.Lumagen {
         private static string SanitizeText(string value, int maxLength) => new string(value.Take(maxLength).Select(c => (char.IsLetterOrDigit(c) ? c : ' ')).ToArray());
 
         //--- Fields ---
+        public event EventHandler<GetModeInfoResponse> ModeInfoChanged;
         private readonly SerialPort _serialPort;
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
         private string _accumulator = "";
@@ -123,6 +124,7 @@ namespace RadiantPi.Lumagen {
 
         //--- Constructors ---
         public RadianceProClient(SerialPort serialPort) {
+            _responseReceivedEvent += DispatchEvents;
             _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
             _serialPort.DataReceived += SerialDataReceived;
             _serialPort.Open();
@@ -157,9 +159,135 @@ namespace RadiantPi.Lumagen {
 
         public async Task<GetModeInfoResponse> GetModeInfoAsync() {
             var response = await SendAsync("ZQI23", expectResponse: true);
+            return ParseModeInfoResponse(response);
+        }
+
+        public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
+            => SendAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}", expectResponse: true);
+
+        public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value)
+            => SendAsync("ZY524" + $"{ToCommandCode(memory, allowAll: true)}{ToCommandCode(input)}{SanitizeText(value, maxLength: 10)}" + "\r", expectResponse: false);
+
+        public Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode)
+            => SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true);
+
+        public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value)
+            => SendAsync("ZY524" + $"1{ToCommandCode(customMode)}{SanitizeText(value, maxLength: 7)}" + "\r", expectResponse: false);
+
+        public Task<string> GetCmsLabelAsync(RadianceProCms cms)
+            => SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true);
+
+        public Task SetCmsLabelAsync(RadianceProCms cms, string value)
+            => SendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
+
+        public Task<string> GetStyleLabelAsync(RadianceProStyle style) => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
+
+        public Task SetStyleLabelAsync(RadianceProStyle style, string value)
+            => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
+
+        public void Dispose() {
+            _serialPort.DataReceived -= SerialDataReceived;
+            _mutex.Dispose();
+            _serialPort.Dispose();
+        }
+
+        private async Task<string> SendAsync(string command, bool expectResponse) {
+            var buffer = Encoding.UTF8.GetBytes(command);
+            await _mutex.WaitAsync();
+            try {
+
+                // send message, await echo response and optional response message
+                if(expectResponse) {
+                    TaskCompletionSource<string> responseSource = new();
+                    try {
+                        _responseReceivedEvent += ReadResponse;
+                        Log($"sending: '{command}'");
+                        await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
+                        return await responseSource.Task;
+                    } finally {
+                        _responseReceivedEvent -= ReadResponse;
+                    }
+
+                    // local functions
+                    void ReadResponse(object sender, string response) {
+
+                        // skip everything until the first comma (',')
+                        for(var i = 0; i < response.Length; ++i) {
+                            if(response[i] == ',') {
+                                response = response.Remove(0, i + 1);
+                                break;
+                            }
+                        }
+
+                        // terminator characters were received; indicate we're done by setting response
+                        responseSource.SetResult(response);
+                    }
+                } else {
+                    await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
+                    return null;
+                }
+            } finally {
+                _mutex.Release();
+            }
+        }
+
+        private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
+            var received = _serialPort.ReadExisting();
+            Log($"received: '{received}'");
+
+            // loop while there is text to process
+            while(received.Length > 0) {
+                if(_accumulator.Length == 0) {
+
+                    // check if received text contains a response marker
+                    var index = received.IndexOf('!');
+                    if(index < 0) {
+                        return;
+                    }
+
+                    // found beginning of a response
+                    _accumulator = "!";
+
+                    // continue by processing remainder of received text
+                    received = received.Substring(index + 1);
+                } else {
+
+                    // append received text
+                    _accumulator += received;
+
+                    // check if we found an end-of-response marker
+                    var index = _accumulator.IndexOf("\r\n");
+                    if(index < 0) {
+                        return;
+                    }
+
+                    // process response
+                    var message = _accumulator.Substring(0, index);
+                    Log($"dispatching: '{message}'");
+                    _responseReceivedEvent?.Invoke(this, message);
+
+                    // process remainder of accumulator as newly received text
+                    received = _accumulator.Substring(index);
+                    _accumulator = "";
+                }
+            }
+        }
+
+        private void DispatchEvents(object sender, string response) {
+            const string MODEINFORESPONSE = "!I23,";
+            if(response.StartsWith(MODEINFORESPONSE, StringComparison.Ordinal)) {
+                var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODEINFORESPONSE.Length));
+                if(modeInfoResponse != null) {
+                    Log("event: GetModeInfoResponse");
+                    ModeInfoChanged?.Invoke(this, modeInfoResponse);
+                }
+            }
+        }
+
+        private GetModeInfoResponse ParseModeInfoResponse(string response) {
             var data = response.Split(",");
             if(data.Length < 21) {
-                throw new InvalidDataException("invalid response");
+                throw new InvalidDataException("invalid GetModeInfoResponse");
             }
             return LogResponse(new GetModeInfoResponse {
                 InputStatus = data[0] switch {
@@ -246,118 +374,6 @@ namespace RadiantPi.Lumagen {
                 VirtualInputSelected = uint.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture),
                 PhysicalInputSelected = uint.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture)
             });
-        }
-
-        public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
-            => SendAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}", expectResponse: true);
-
-        public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value)
-            => SendAsync("ZY524" + $"{ToCommandCode(memory, allowAll: true)}{ToCommandCode(input)}{SanitizeText(value, maxLength: 10)}" + "\r", expectResponse: false);
-
-        public Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode)
-            => SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true);
-
-        public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value)
-            => SendAsync("ZY524" + $"1{ToCommandCode(customMode)}{SanitizeText(value, maxLength: 7)}" + "\r", expectResponse: false);
-
-        public Task<string> GetCmsLabelAsync(RadianceProCms cms)
-            => SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true);
-
-        public Task SetCmsLabelAsync(RadianceProCms cms, string value)
-            => SendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
-
-        public Task<string> GetStyleLabelAsync(RadianceProStyle style) => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
-
-        public Task SetStyleLabelAsync(RadianceProStyle style, string value)
-            => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
-
-        public void Dispose() {
-            _serialPort.DataReceived -= SerialDataReceived;
-            _mutex.Dispose();
-            _serialPort.Dispose();
-        }
-
-        private async Task<string> SendAsync(string command, bool expectResponse) {
-            var buffer = Encoding.UTF8.GetBytes(command);
-            await _mutex.WaitAsync();
-            try {
-
-                // send message, await echo response and optional response message
-                if(expectResponse) {
-                    TaskCompletionSource<string> responseSource = new();
-                    try {
-                        _responseReceivedEvent += ReadResponse;
-                        Log($"sending: '{command}'");
-                        await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
-                        return await responseSource.Task;
-                    } finally {
-                        _responseReceivedEvent -= ReadResponse;
-                    }
-
-                    // local functions
-                    void ReadResponse(object sender, string response) {
-                        Log($"response: '{response}'");
-
-                        // skip everything until the first comma (',')
-                        for(var i = 0; i < response.Length; ++i) {
-                            if(response[i] == ',') {
-                                response = response.Remove(0, i + 1);
-                                break;
-                            }
-                        }
-
-                        // terminator characters were received; indicate we're done by setting response
-                        responseSource.SetResult(response);
-                    }
-                } else {
-                    await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
-                    return null;
-                }
-            } finally {
-                _mutex.Release();
-            }
-        }
-
-        private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
-            var received = _serialPort.ReadExisting();
-            Log($"received: '{received}'");
-
-            // loop while there is text to process
-            while(received.Length > 0) {
-                if(_accumulator.Length == 0) {
-
-                    // check if received text contains a response marker
-                    var index = received.IndexOf('!');
-                    if(index < 0) {
-                        return;
-                    }
-
-                    // found beginning of a response
-                    _accumulator = "!";
-
-                    // continue by processing remainder of received text
-                    received = received.Substring(index + 1);
-                } else {
-
-                    // append received text
-                    _accumulator += received;
-
-                    // check if we found an end-of-response marker
-                    var index = _accumulator.IndexOf("\r\n");
-                    if(index < 0) {
-                        return;
-                    }
-
-                    // process response
-                    var message = _accumulator.Substring(0, index);
-                    Log($"dispatching: '{message}'");
-                    _responseReceivedEvent?.Invoke(this, message);
-
-                    // process remainder of accumulator as newly received text
-                    received = _accumulator.Substring(index);
-                    _accumulator = "";
-                }
-            }
         }
 
         private void Log(string message) {
