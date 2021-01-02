@@ -19,41 +19,47 @@
 <h2>Input</h2>
 <form>
     <fieldset disabled=@Disabled>
-        @RenderLabel("input-status", "Input Status", ModeInfo.InputStatus.ToString())
+        @RenderLabel("input-physical-input", "Physical Input", ModeInfo.PhysicalInputSelected.ToString())
+        @RenderLabel("input-virtual-input", "Virtual Input", ModeInfo.VirtualInputSelected.ToString())
+        @RenderLabel("input-status", "Status", ModeInfo.InputStatus.ToString())
         @RenderLabel("input-active-config", "Active Configuration", ModeInfo.ActiveInputConfigNumber)
-        @RenderLabel("input-physical", "Physical Input", ModeInfo.PhysicalInputSelected.ToString())
-        @RenderLabel("input-virtual", "Virtual Input", ModeInfo.VirtualInputSelected.ToString())
-        @RenderLabel("source-3d-mode", "3D Mode", ModeInfo.Source3DMode.ToString())
-        @RenderLabel("source-content-aspect-ratio", "Content AR", ModeInfo.SourceContentAspectRatio)
+        @RenderLabel("source-vertical-resolution", "Vertical Resolution", InputVerticalResolution)
+        @RenderLabel("source-vertical-refresh-rate", "Refresh Rate", InputVerticalRefreshRate)
+        @RenderLabel("source-raster-aspect-ratio", "Aspect Ratio (Raster)", InputRasterAspectRatio)
+        @RenderLabel("source-content-aspect-ratio", "Aspect Ratio (Content)", InputContentAspectRatio)
         @RenderLabel("source-dynamic-range", "Dynamic Range", ModeInfo.SourceDynamicRange.ToString())
-        @RenderLabel("source-raster-aspect-ratio", "Raster AR", ModeInfo.SourceRasterAspectRatio)
-        @RenderLabel("source-vertical-refresh-rate", "Refresh Rate", ModeInfo.SourceVerticalRate)
-        @RenderLabel("source-vertical-resolution", "Vertical Resolution", ModeInfo.SourceVerticalResolution)
-        @RenderLabel("source-video-mode", "Video Mode", ModeInfo.SourceVideoMode.ToString())
+        @RenderLabel("source-3d-mode", "3D Mode", ModeInfo.Source3DMode.ToString())
     </fieldset>
 </form>
 
 <h2>Output</h2>
 <form>
     <fieldset disabled=@Disabled>
-        @RenderLabel("output-3d-mode", "3D Mode", ModeInfo.Output3DMode.ToString())
-        @RenderLabel("output-aspect-ratio", "Aspect Ratio", ModeInfo.OutputAspectRatio)
-        @RenderLabel("output-cms", "CMS", ModeInfo.OutputCms.ToString())
+        @RenderLabel("output-enabled", "Outputs", Convert.ToString(ModeInfo.OutputEnabled, 2).PadLeft(16, '0'))
+        @RenderLabel("output-vertical-resolution", "Vertial Resolution", OutputVerticalResolution)
+        @RenderLabel("output-vertical-refresh-rate", "Refresh Rate", OutputVerticalRefreshRate)
+        @RenderLabel("output-aspect-ratio-nls", "Aspect Ratio", OutputAspectRatio)
         @RenderLabel("output-color-space", "Color Space", ModeInfo.OutputColorSpace.ToString())
-        @RenderLabel("output-enabled", "Outputs", Convert.ToString(ModeInfo.OutputEnabled, 2))
-        @RenderLabel("output-nls", "NLS", ModeInfo.OutputNonLinearStretchActive ? "on" : "off")
-        @RenderLabel("output-style", "Style", ModeInfo.OutputStyle.ToString())
-        @RenderLabel("output-vertical-refresh-rate", "Refresh Rate", ModeInfo.OutputVerticalRate)
-        @RenderLabel("output-vertical-resolution", "Vertial Resolution", ModeInfo.OutputVerticalResolution)
-        @RenderLabel("output-video-mode", "Video Mode", ModeInfo.OutputVideoMode.ToString())
+        @RenderLabel("output-cms", "CMS", OutputCmsLabel)
+        @RenderLabel("output-style", "Style", OutputStyleLabel)
+        @RenderLabel("output-3d-mode", "3D Mode", ModeInfo.Output3DMode.ToString())
     </fieldset>
 </form>
-
 
 @code {
 
     //--- Properties ---
     protected bool Disabled { get; set; } = true;
+    protected string InputVerticalResolution { get; set; } = "(loading...)";
+    protected string InputVerticalRefreshRate { get; set; } = "(loading...)";
+    protected string InputContentAspectRatio { get; set; } = "(loading...)";
+    protected string InputRasterAspectRatio { get; set; } = "(loading...)";
+    protected string OutputVerticalResolution { get; set; } = "(loading...)";
+    protected string OutputVerticalRefreshRate { get; set; } = "(loading...)";
+    protected string OutputAspectRatio { get; set; } = "(loading...)";
+    protected string OutputStyleLabel { get; set; } = "(loading...)";
+    protected string OutputCmsLabel { get; set; } = "(loading...)";
+
     protected GetDeviceInfoResponse DeviceInfo { get; set; } = new GetDeviceInfoResponse {
         ModelName = "(loading...)",
         ModelNumber = "(loading...)",
@@ -90,19 +96,57 @@
         await base.OnInitializedAsync();
         DeviceInfo = await Client.GetDeviceInfoAsync();
         ModeInfo = await Client.GetModeInfoAsync();
+        InputVerticalResolution = ToResolution(ModeInfo.SourceVerticalResolution, ModeInfo.SourceVideoMode);
+        InputVerticalRefreshRate = ToRefreshRate(ModeInfo.SourceVerticalRate);
+        InputContentAspectRatio = ToAspectRatio(ModeInfo.SourceContentAspectRatio);
+        InputRasterAspectRatio = ToAspectRatio(ModeInfo.SourceRasterAspectRatio);
+        OutputVerticalResolution = ToResolution(ModeInfo.OutputVerticalResolution, ModeInfo.OutputVideoMode);
+        OutputVerticalRefreshRate = ToRefreshRate(ModeInfo.OutputVerticalRate);
+        OutputAspectRatio = ToAspectRatio(ModeInfo.OutputAspectRatio, ModeInfo.OutputNonLinearStretchActive);
+        OutputStyleLabel = await Client.GetStyleLabelAsync(ModeInfo.OutputStyle);
+        OutputCmsLabel = await Client.GetCmsLabelAsync(ModeInfo.OutputCms);
         Disabled = false;
     }
 
     protected RenderFragment RenderLabel(string id, string title, string value) {
-        return @<div class="mb-3">
-            <div class="row g-3 align-items-center">
-                <div class="col-auto">
-                    <label for=@id class="col-form-label">@title</label>
-                </div>
-                <div class="col-auto">
-                    <input class="form-control" id=@id value=@value readonly>
-                </div>
+        return @<div class="form-group row">
+            <label for=@id class="col-sm col-xl-3 col-form-label">@title</label>
+            <div class="col-sm col-xl-3">
+                <input class="form-control" id=@id value=@value readonly>
             </div>
-       </div>;
+        </div>;
     }
+
+    protected string ToResolution(string resolution, RadianceProVideoMode mode) {
+        switch(mode) {
+        case RadianceProVideoMode.Progressive:
+            return resolution + "p";
+        case RadianceProVideoMode.Interlaced:
+            return resolution + "i";
+        default:
+            return resolution + $" ({mode})";
+        }
+    }
+
+    protected string ToAspectRatio(string aspectRatio, bool nls = false) {
+        var result = (aspectRatio.Length == 3) && aspectRatio.All(c => char.IsDigit(c))
+            ? $"{aspectRatio[0]}.{aspectRatio.Substring(1)}"
+            : aspectRatio;
+        return nls
+            ? result + " (NLS)"
+            : result;
+    }
+
+    protected string ToRefreshRate(string refreshRate)
+        => refreshRate switch {
+            "023" => "23.98 FPS",
+            "024" => "24 FPS",
+            "025" => "25 FPS",
+            "029" => "29.97 FPS",
+            "030" => "30 FPS",
+            "050" => "50 FPS",
+            "059" => "59.94 FPS",
+            "060" => "60 FPS",
+            _ => refreshRate
+        };
 }

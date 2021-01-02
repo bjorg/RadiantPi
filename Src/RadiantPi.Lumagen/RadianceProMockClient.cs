@@ -42,14 +42,14 @@ namespace RadiantPi.Lumagen {
             [$"{RadianceProCms.Cms7}"] = "CMS7",
 
             // default custom mode labels
-            [$"{RadianceProCustomMode.CustomMode0}"] = "Custom0",
-            [$"{RadianceProCustomMode.CustomMode1}"] = "Custom1",
-            [$"{RadianceProCustomMode.CustomMode2}"] = "Custom2",
-            [$"{RadianceProCustomMode.CustomMode3}"] = "Custom3",
-            [$"{RadianceProCustomMode.CustomMode4}"] = "Custom4",
-            [$"{RadianceProCustomMode.CustomMode5}"] = "Custom5",
-            [$"{RadianceProCustomMode.CustomMode6}"] = "Custom6",
-            [$"{RadianceProCustomMode.CustomMode7}"] = "Custom7",
+            [$"{RadianceProCustomMode.CustomMode0}"] = "CUSTOM0",
+            [$"{RadianceProCustomMode.CustomMode1}"] = "CUSTOM1",
+            [$"{RadianceProCustomMode.CustomMode2}"] = "CUSTOM2",
+            [$"{RadianceProCustomMode.CustomMode3}"] = "CUSTOM3",
+            [$"{RadianceProCustomMode.CustomMode4}"] = "CUSTOM4",
+            [$"{RadianceProCustomMode.CustomMode5}"] = "CUSTOM5",
+            [$"{RadianceProCustomMode.CustomMode6}"] = "CUSTOM6",
+            [$"{RadianceProCustomMode.CustomMode7}"] = "CUSTOM7",
 
             // default input labels
             [$"{RadianceProMemory.MemoryA}-{RadianceProInput.Input1}"] = "Input 1A",
@@ -86,14 +86,14 @@ namespace RadiantPi.Lumagen {
             [$"{RadianceProMemory.MemoryD}-{RadianceProInput.Input8}"] = "Input 8D",
 
             // default style labels
-            [$"{RadianceProStyle.Style0}"] = "Style0",
-            [$"{RadianceProStyle.Style1}"] = "Style1",
-            [$"{RadianceProStyle.Style2}"] = "Style2",
-            [$"{RadianceProStyle.Style3}"] = "Style3",
-            [$"{RadianceProStyle.Style4}"] = "Style4",
-            [$"{RadianceProStyle.Style5}"] = "Style5",
-            [$"{RadianceProStyle.Style6}"] = "Style6",
-            [$"{RadianceProStyle.Style7}"] = "Style7"
+            [$"{RadianceProStyle.Style0}"] = "STYLE0",
+            [$"{RadianceProStyle.Style1}"] = "STYLE1",
+            [$"{RadianceProStyle.Style2}"] = "STYLE2",
+            [$"{RadianceProStyle.Style3}"] = "STYLE3",
+            [$"{RadianceProStyle.Style4}"] = "STYLE4",
+            [$"{RadianceProStyle.Style5}"] = "STYLE5",
+            [$"{RadianceProStyle.Style6}"] = "STYLE6",
+            [$"{RadianceProStyle.Style7}"] = "STYLE7"
         };
 
         //--- Methods ---
@@ -114,7 +114,7 @@ namespace RadiantPi.Lumagen {
                 ActiveInputConfigNumber = "1",
                 SourceRasterAspectRatio = "178",
                 SourceContentAspectRatio = "220",
-                OutputNonLinearStretchActive = false,
+                OutputNonLinearStretchActive = true,
                 Output3DMode = RadiancePro3D.Off,
                 OutputEnabled = 8,
                 OutputCms = RadianceProCms.Cms0,
