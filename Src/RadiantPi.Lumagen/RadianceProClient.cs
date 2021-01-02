@@ -118,7 +118,7 @@ namespace RadiantPi.Lumagen {
         //--- Fields ---
         private readonly SerialPort _serialPort;
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
-        private readonly StringBuilder _accumulator = new StringBuilder();
+        private string _accumulator = "";
         private event EventHandler<string> _responseReceivedEvent;
 
         //--- Constructors ---
@@ -296,7 +296,7 @@ namespace RadiantPi.Lumagen {
 
                     // local functions
                     void ReadResponse(object sender, string response) {
-                        Log($"received: '{response}'");
+                        Log($"response: '{response}'");
 
                         // skip everything until the first comma (',')
                         for(var i = 0; i < response.Length; ++i) {
@@ -321,43 +321,41 @@ namespace RadiantPi.Lumagen {
         private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
             var received = _serialPort.ReadExisting();
             Log($"received: '{received}'");
-            var receivedParts = received.Split("\r\n").ToList();
-            while(receivedParts.Any()) {
 
-                // process first item in the list of received fragments
-                var receivedPart = receivedParts.First();
-                receivedParts.RemoveAt(0);
-                if(receivedPart.Length == 0) {
-
-                    // found a <CR><LF> separator; keep going
-                    continue;
-                }
-
-                // check if a new message was found
+            // loop while there is text to process
+            while(received.Length > 0) {
                 if(_accumulator.Length == 0) {
 
-                    // find beginning of a new message (!)
-                    var eventParts = receivedPart.Split('!', 2);
-                    if(eventParts.Length > 1) {
-                        _accumulator.Append("!");
-
-                        // insert remainder as a new fragment
-                        receivedParts.Insert(0, eventParts[1]);
+                    // check if received text contains a response marker
+                    var index = received.IndexOf('!');
+                    if(index < 0) {
+                        return;
                     }
+
+                    // found beginning of a response
+                    _accumulator = "!";
+
+                    // continue by processing remainder of received text
+                    received = received.Substring(index + 1);
                 } else {
 
-                    // append continuation to previously received message
-                    _accumulator.Append(receivedPart);
+                    // append received text
+                    _accumulator += received;
 
-                    // if more fragments exist; we have found a message separator
-                    if(receivedParts.Any()) {
-
-                        // emit current fragment as an event
-                        var message = _accumulator.ToString();
-                        _accumulator.Clear();
-                        Log($"dispatching: '{message}'");
-                        _responseReceivedEvent?.Invoke(this, message);
+                    // check if we found an end-of-response marker
+                    var index = _accumulator.IndexOf("\r\n");
+                    if(index < 0) {
+                        return;
                     }
+
+                    // process response
+                    var message = _accumulator.Substring(0, index);
+                    Log($"dispatching: '{message}'");
+                    _responseReceivedEvent?.Invoke(this, message);
+
+                    // process remainder of accumulator as newly received text
+                    received = _accumulator.Substring(index);
+                    _accumulator = "";
                 }
             }
         }
