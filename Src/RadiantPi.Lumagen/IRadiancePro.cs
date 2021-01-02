@@ -25,7 +25,8 @@ namespace RadiantPi.Lumagen {
     public interface IRadiancePro : IDisposable {
 
         //--- Methods ---
-        Task<GetInfoResponse> GetInfoAsync();
+        Task<GetDeviceInfoResponse> GetDeviceInfoAsync();
+        Task<GetModeInfoResponse> GetModeInfoAsync();
         Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input);
         Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value);
         Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode);

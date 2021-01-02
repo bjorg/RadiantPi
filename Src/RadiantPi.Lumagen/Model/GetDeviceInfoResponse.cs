@@ -17,11 +17,12 @@
  */
 
 namespace RadiantPi.Lumagen.Model {
-    public sealed class GetInfoResponse {
+
+    public sealed class GetDeviceInfoResponse {
 
         // Returns model name, software revision, model#, serial #.
         // Example response: "!S01,RadianceXD,102308,1009,745<CR><LF>".
-        // Radiance XD model number is 1009, XE is 1010, XS is 1011, Mini is 1014, 20XX is 1016, 21XX is 1017, all Pro are 1018
+        // Radiance XD model number is 1009, XE is 1010, XS is 1011, Mini is 1014, 20XX is 1016, 21XX is 1017, all Pro are 1018.
 
         //--- Properties ---
         public string ModelName { get; set; }

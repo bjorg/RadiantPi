@@ -97,12 +97,37 @@ namespace RadiantPi.Lumagen {
         };
 
         //--- Methods ---
-        public async Task<GetInfoResponse> GetInfoAsync()
-            => new GetInfoResponse {
+        public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync()
+            => new GetDeviceInfoResponse {
                 ModelName = "RadianceXD",
                 SoftwareRevision = "102308",
                 ModelNumber = "1009",
                 SerialNumber = "745"
+            };
+
+        public async Task<GetModeInfoResponse> GetModeInfoAsync()
+            => new GetModeInfoResponse {
+                InputStatus = RadianceProInputStatus.ActiveVideo,
+                SourceVerticalRate = "023",
+                SourceVerticalResolution = "1080",
+                Source3DMode = RadiancePro3D.Off,
+                ActiveInputConfigNumber = "1",
+                SourceRasterAspectRatio = "178",
+                SourceContentAspectRatio = "220",
+                OutputNonLinearStretchActive = false,
+                Output3DMode = RadiancePro3D.Off,
+                OutputEnabled = 8,
+                OutputCms = RadianceProCms.Cms0,
+                OutputStyle = RadianceProStyle.Style0,
+                OutputVerticalRate = "059",
+                OutputVerticalResolution = "2160",
+                OutputAspectRatio = "178",
+                OutputColorSpace = RadianceProColorSpace.CS709,
+                SourceDynamicRange = RadianceProDynamicRange.SDR,
+                SourceVideoMode = RadianceProVideoMode.Progressive,
+                OutputVideoMode = RadianceProVideoMode.Progressive,
+                VirtualInputSelected = 1,
+                PhysicalInputSelected = 1
             };
 
         public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input) {

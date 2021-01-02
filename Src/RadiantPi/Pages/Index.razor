@@ -19,7 +19,7 @@
 
     //--- Properties ---
     protected bool Disabled { get; set; } = true;
-    protected GetInfoResponse Info { get; set; } = new GetInfoResponse {
+    protected GetDeviceInfoResponse Info { get; set; } = new GetDeviceInfoResponse {
         ModelName = "(loading...)",
         ModelNumber = "(loading...)",
         SerialNumber = "(loading...)",
@@ -29,7 +29,7 @@
     //--- Methods ---
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
-        Info = await Client.GetInfoAsync();
+        Info = await Client.GetDeviceInfoAsync();
         Disabled = false;
     }
 

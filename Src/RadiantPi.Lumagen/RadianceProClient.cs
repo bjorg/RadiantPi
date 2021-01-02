@@ -17,6 +17,7 @@
  */
 
 using System;
+using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
@@ -135,17 +136,110 @@ namespace RadiantPi.Lumagen {
         public bool Verbose { get; set; }
 
         //--- Methods ---
-        public async Task<GetInfoResponse> GetInfoAsync() {
+        public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync() {
             var response = await SendAsync("ZQS01", expectResponse: true);
             var data = response.Split(",");
             if(data.Length < 4) {
                 throw new InvalidDataException("invalid response");
             }
-            return new GetInfoResponse {
+            return new GetDeviceInfoResponse {
                 ModelName = data[0],
                 SoftwareRevision = data[1],
                 ModelNumber = data[2],
                 SerialNumber = data[3]
+            };
+        }
+
+        public async Task<GetModeInfoResponse> GetModeInfoAsync() {
+            var response = await SendAsync("ZQI23", expectResponse: true);
+            var data = response.Split(",");
+            if(data.Length < 21) {
+                throw new InvalidDataException("invalid response");
+            }
+            return new GetModeInfoResponse {
+                InputStatus = data[0] switch {
+                    "0" => RadianceProInputStatus.NoSource,
+                    "1" => RadianceProInputStatus.ActiveVideo,
+                    "2" => RadianceProInputStatus.InternalPattern,
+                    string invalid => throw new InvalidDataException($"invalid input status: {invalid}")
+                },
+                SourceVerticalRate = data[1],
+                SourceVerticalResolution = data[2],
+                Source3DMode = data[3] switch {
+                    "0" => RadiancePro3D.Off,
+                    "1" => RadiancePro3D.FrameSequential,
+                    "2" => RadiancePro3D.FramePacked,
+                    "4" => RadiancePro3D.TopBottom,
+                    "8" => RadiancePro3D.SideBySide,
+                    string invalid => throw new InvalidDataException($"invalid source 3D mode: {invalid}")
+                },
+                ActiveInputConfigNumber = data[4],
+                SourceRasterAspectRatio = data[5],
+                SourceContentAspectRatio = data[6],
+                OutputNonLinearStretchActive = data[7] switch {
+                    "-" => false,
+                    "N" => true,
+                    string invalid => throw new InvalidDataException($"invalid NLS mode: {invalid}")
+                },
+                Output3DMode = data[8] switch {
+                    "0" => RadiancePro3D.Off,
+                    "1" => RadiancePro3D.FrameSequential,
+                    "2" => RadiancePro3D.FramePacked,
+                    "4" => RadiancePro3D.TopBottom,
+                    "8" => RadiancePro3D.SideBySide,
+                    string invalid => throw new InvalidDataException($"invalid source 3D mode: {invalid}")
+                },
+                OutputEnabled = ushort.Parse(data[9], NumberStyles.HexNumber, CultureInfo.InvariantCulture),
+                OutputCms = data[10] switch {
+                    "0" => RadianceProCms.Cms0,
+                    "1" => RadianceProCms.Cms1,
+                    "2" => RadianceProCms.Cms2,
+                    "3" => RadianceProCms.Cms3,
+                    "4" => RadianceProCms.Cms4,
+                    "5" => RadianceProCms.Cms5,
+                    "6" => RadianceProCms.Cms6,
+                    "7" => RadianceProCms.Cms7,
+                    string invalid => throw new InvalidDataException($"invalid output cms: {invalid}")
+                },
+                OutputStyle = data[11] switch {
+                    "0" => RadianceProStyle.Style0,
+                    "1" => RadianceProStyle.Style1,
+                    "2" => RadianceProStyle.Style2,
+                    "3" => RadianceProStyle.Style3,
+                    "4" => RadianceProStyle.Style4,
+                    "5" => RadianceProStyle.Style5,
+                    "6" => RadianceProStyle.Style6,
+                    "7" => RadianceProStyle.Style7,
+                    string invalid => throw new InvalidDataException($"invalid output style: {invalid}")
+                },
+                OutputVerticalRate = data[12],
+                OutputVerticalResolution = data[13],
+                OutputAspectRatio = data[14],
+                OutputColorSpace = data[15] switch {
+                    "0" => RadianceProColorSpace.CS601,
+                    "1" => RadianceProColorSpace.CS709,
+                    "2" => RadianceProColorSpace.CS2020,
+                    "3" => RadianceProColorSpace.CS2100,
+                    string invalid => throw new InvalidDataException($"invalid output color space: {invalid}")
+                },
+                SourceDynamicRange = data[16] switch {
+                    "0" => RadianceProDynamicRange.SDR,
+                    "1" => RadianceProDynamicRange.HDR,
+                    string invalid => throw new InvalidDataException($"invalid source dynamic range: {invalid}")
+                },
+                SourceVideoMode = data[17] switch {
+                    "i" => RadianceProVideoMode.Interlaced,
+                    "p" => RadianceProVideoMode.Progressive,
+                    "-" => RadianceProVideoMode.NoVideo,
+                    string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
+                },
+                OutputVideoMode = data[18] switch {
+                    "i" => RadianceProVideoMode.Interlaced,
+                    "p" => RadianceProVideoMode.Progressive,
+                    string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
+                },
+                VirtualInputSelected = uint.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture),
+                PhysicalInputSelected = uint.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture)
             };
         }
 

@@ -74,4 +74,41 @@ namespace RadiantPi.Lumagen {
         Style6,
         Style7
     }
+
+    public enum RadianceProInputStatus {
+        Undefined,
+        NoSource,
+        ActiveVideo,
+        InternalPattern
+    }
+
+    public enum RadiancePro3D {
+        Undefined,
+        Off,
+        FrameSequential,
+        FramePacked,
+        TopBottom,
+        SideBySide
+    }
+
+    public enum RadianceProColorSpace {
+        Undefined,
+        CS601,
+        CS709,
+        CS2020,
+        CS2100
+    }
+
+    public enum RadianceProDynamicRange {
+        Undefined,
+        SDR,
+        HDR
+    }
+
+    public enum RadianceProVideoMode {
+        Undefined,
+        NoVideo,
+        Interlaced,
+        Progressive,
+    }
 }
