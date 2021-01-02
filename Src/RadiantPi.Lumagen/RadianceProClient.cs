@@ -363,7 +363,13 @@ namespace RadiantPi.Lumagen {
 
         private void Log(string message) {
             if(Verbose) {
-                Console.WriteLine($"{typeof(RadianceProClient).Name}: {message.Replace("\r", "\\r").Replace("\n", "\\n")}");
+                var escapedMessage = string.Join("", message.Select(c => c switch {
+                    >= (char)32 and < (char)127 => ((char)c).ToString(),
+                    '\n' => "\\n",
+                    '\r' => "\\r",
+                    _ => $"\\u{(int)c:X4}"
+                }));
+                Console.WriteLine($"{typeof(RadianceProClient).Name}: {escapedMessage}");
             }
         }
     }
