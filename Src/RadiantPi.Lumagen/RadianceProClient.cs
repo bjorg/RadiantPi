@@ -124,7 +124,7 @@ namespace RadiantPi.Lumagen {
         //--- Constructors ---
         public RadianceProClient(SerialPort serialPort) {
             _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
-            _serialPort.DataReceived += UnsolicitedDataReceived;
+            _serialPort.DataReceived += SerialDataReceived;
             _serialPort.Open();
         }
 
@@ -272,7 +272,7 @@ namespace RadiantPi.Lumagen {
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
         public void Dispose() {
-            _serialPort.DataReceived -= UnsolicitedDataReceived;
+            _serialPort.DataReceived -= SerialDataReceived;
             _mutex.Dispose();
             _serialPort.Dispose();
         }
@@ -281,93 +281,44 @@ namespace RadiantPi.Lumagen {
             var buffer = Encoding.UTF8.GetBytes(command);
             await _mutex.WaitAsync();
             try {
-                var echo = command;
-                if(echo.Any() && echo.Last() == '\r') {
-
-                    // append newline character when command ends with carriage-return
-                    echo += "\n";
-                }
-                TaskCompletionSource<string> responseSource = new();
-                StringBuilder receiveBuffer = new();
 
                 // send message, await echo response and optional response message
-                try {
-                    _serialPort.DataReceived += DataReceived;
-                    Log($"sending: '{command}'");
-                    await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
-                    return await responseSource.Task;
-                } finally {
-                    _serialPort.DataReceived -= DataReceived;
-                }
-
-                // local functions
-                void DataReceived(object sender, SerialDataReceivedEventArgs args) {
-                    var received = _serialPort.ReadExisting();
-                    Log($"received: '{received}'");
-                    foreach(var c in received) {
-
-                        // check if we're matching echoed characters
-                        if(echo.Any()) {
-                            if(c == echo.First()) {
-
-                                // remove matched character
-                                echo = echo.Substring(1);
-                                continue;
-                            }
-
-                            // unexpected charater
-                            responseSource.SetException(new IOException($"unexpected charater: expected '{echo[0]}' ({(int)echo[0]}), received '{c}' ({(int)c})"));
-                            return;
-                        } else if(!expectResponse) {
-
-                            // unexpected extra charater, that's not good!
-                            responseSource.SetException(new IOException($"unexpected extra charater: '{c}' ({(int)c})"));
-                            return;
-                        }
-
-                        // add character to receive buffer
-                        receiveBuffer.Append(c);
+                if(expectResponse) {
+                    TaskCompletionSource<string> responseSource = new();
+                    try {
+                        _responseReceivedEvent += ReadResponse;
+                        Log($"sending: '{command}'");
+                        await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
+                        return await responseSource.Task;
+                    } finally {
+                        _responseReceivedEvent -= ReadResponse;
                     }
 
-                    // check if we're done receiving data
-                    if(echo.Any()) {
+                    // local functions
+                    void ReadResponse(object sender, string response) {
+                        Log($"received: '{response}'");
 
-                        // more echo characters expected; keep going
-                    } else if(!expectResponse) {
-
-                        // all echo characters were matched; no additional data expected; indicate we're done with a 'null' response
-                        responseSource.SetResult(null);
-                    } else if(
-                        (receiveBuffer.Length >= 2)
-                        && (receiveBuffer[receiveBuffer.Length - 2] == '\r')
-                        && (receiveBuffer[receiveBuffer.Length - 1] == '\n')
-                    ) {
-
-                        // remove trailing line terminator
-                        receiveBuffer.Remove(receiveBuffer.Length - 2, 2);
-
-                        // check if the response has a prologue
-                        if(receiveBuffer[0] == '!') {
-
-                            // skip everything until the first comma (',')
-                            for(var i = 0; i < receiveBuffer.Length; ++i) {
-                                if(receiveBuffer[i] == ',') {
-                                    receiveBuffer.Remove(0, i + 1);
-                                    break;
-                                }
+                        // skip everything until the first comma (',')
+                        for(var i = 0; i < response.Length; ++i) {
+                            if(response[i] == ',') {
+                                response = response.Remove(0, i + 1);
+                                break;
                             }
                         }
 
                         // terminator characters were received; indicate we're done by setting response
-                        responseSource.SetResult(receiveBuffer.ToString());
+                        responseSource.SetResult(response);
                     }
+                } else {
+                    await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
+                    return null;
                 }
             } finally {
                 _mutex.Release();
             }
         }
 
-        private void UnsolicitedDataReceived(object sender, SerialDataReceivedEventArgs args) {
+        private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
             var received = _serialPort.ReadExisting();
             Log($"received: '{received}'");
             var receivedParts = received.Split("\r\n").ToList();
