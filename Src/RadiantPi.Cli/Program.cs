@@ -46,5 +46,11 @@ port.DataReceived += (sender, args) => {
     var received = ((SerialPort)sender).ReadExisting();
     Console.WriteLine($"received: '{received}'");
 };
-Console.WriteLine($"Opening port {args[0]}");
+Console.WriteLine($"Opening port {args[0]} (Press ESC to stop)");
 port.Open();
+
+for(;;) {
+    if(Console.ReadKey(intercept: true).Key == ConsoleKey.Escape) {
+        return;
+    }
+}
