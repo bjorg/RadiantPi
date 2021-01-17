@@ -23,7 +23,28 @@ Console.WriteLine("RadiantPi CLI");
 Console.WriteLine();
 
 // list available serial ports
-Console.WriteLine("Available ports");
-foreach(var port in SerialPort.GetPortNames()) {
-    Console.WriteLine($"  {port}");
+if(args.Length == 0) {
+    Console.WriteLine("Available ports");
+    foreach(var portName in SerialPort.GetPortNames()) {
+        Console.WriteLine($"* {portName}");
+    }
+    return;
 }
+
+// open port
+var port = new SerialPort {
+    PortName = args[0],
+    BaudRate = 9600,
+    DataBits = 8,
+    Parity = Parity.None,
+    StopBits = StopBits.One,
+    Handshake = Handshake.None,
+    ReadTimeout = 1_000,
+    WriteTimeout = 1_000
+};
+port.DataReceived += (sender, args) => {
+    var received = ((SerialPort)sender).ReadExisting();
+    Console.WriteLine($"received: '{received}'");
+};
+Console.WriteLine($"Opening port {args[0]}");
+port.Open();
