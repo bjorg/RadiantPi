@@ -17,7 +17,10 @@
  */
 
 using System;
+using System.Linq;
 using System.IO.Ports;
+using System.Text;
+using System.Threading;
 
 Console.WriteLine("RadiantPi CLI");
 Console.WriteLine();
@@ -44,13 +47,44 @@ var port = new SerialPort {
 };
 port.DataReceived += (sender, args) => {
     var received = ((SerialPort)sender).ReadExisting();
-    Console.WriteLine($"received: '{received}'");
+    Console.WriteLine($"received: '{string.Join("", received.Select(EscapeChar))}'");
 };
 Console.WriteLine($"Opening port {args[0]} (Press ESC to stop)");
 port.Open();
+try {
 
-for(;;) {
-    if(Console.ReadKey(intercept: true).Key == ConsoleKey.Escape) {
-        return;
+    // send data to initiate communication
+    Write("ZQI23");
+
+    // listen on port until closed or user exits
+    while(port.IsOpen) {
+
+        // check if user pressed the ESC key
+        if(Console.KeyAvailable && (Console.ReadKey(intercept: true).Key == ConsoleKey.Escape)) {
+            break;
+        }
+        Thread.Sleep(500);
     }
+    if(port.IsOpen) {
+        Console.WriteLine("Closing port");
+        port.Close();
+    } else {
+        Console.WriteLine("Port was closed remotely");
+    }
+} finally {
+    port.Dispose();
+}
+
+// local functions
+string EscapeChar(char c) => c switch {
+    >= (char)32 and < (char)128 => c.ToString(),
+    '\r' => "\\r",
+    '\n' => "\\n",
+    _ => $"\\u{(int)c:X4}"
+};
+
+void Write(string command) {
+    var bytes = Encoding.UTF8.GetBytes(command);
+    port.Write(bytes, 0, bytes.Length);
+
 }
