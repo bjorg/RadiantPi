@@ -137,8 +137,8 @@ namespace RadiantPi.Lumagen {
             Parity = Parity.None,
             StopBits = StopBits.One,
             Handshake = Handshake.None,
-            ReadTimeout = 100,
-            WriteTimeout = 100
+            ReadTimeout = 1_000,
+            WriteTimeout = 1_000
         }) { }
 
         //--- Properties ---
@@ -188,6 +188,7 @@ namespace RadiantPi.Lumagen {
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
         public void Dispose() {
+            Log("Disponse");
             _serialPort.DataReceived -= SerialDataReceived;
             _mutex.Dispose();
             if(_serialPort.IsOpen) {
@@ -240,7 +241,7 @@ namespace RadiantPi.Lumagen {
 
         private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
             var received = _serialPort.ReadExisting();
-            Log($"received: '{received}'");
+            Log($"received: '{string.Join("", received.Select(EscapeChar))}'");
 
             // loop while there is text to process
             while(received.Length > 0) {
@@ -278,6 +279,14 @@ namespace RadiantPi.Lumagen {
                     _accumulator = "";
                 }
             }
+
+            // local functions
+            string EscapeChar(char c) => c switch {
+                >= (char)32 and < (char)128 => c.ToString(),
+                '\r' => "\\r",
+                '\n' => "\\n",
+                _ => $"\\u{(int)c:X4}"
+            };
         }
 
         private void DispatchEvents(object sender, string response) {

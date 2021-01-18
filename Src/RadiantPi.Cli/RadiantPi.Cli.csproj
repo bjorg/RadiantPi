@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>RadiantPi.Cli</RootNamespace>
+    <NoWarn>CS1998</NoWarn>
+    <Deterministic>true</Deterministic>
+
+    <PackageId>RadiantPi.Cli</PackageId>
+    <Version>1.0</Version>
+    <Title>RadiantPi CLI</Title>
+    <Description>Command line tool for Lumagen RadiancePro</Description>
+    <Copyright>Copyright (C) 2020</Copyright>
+    <Authors>Bjorg</Authors>
+
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/bjorg/RadiantPi</PackageProjectUrl>
+    <PackageTags>Lumagen;RadiancePro</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.IO.Ports" Version="5.0.0" />
+  </ItemGroup>
+</Project>
