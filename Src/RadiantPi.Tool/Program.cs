@@ -21,6 +21,7 @@ using System.Linq;
 using System.IO.Ports;
 using System.Text;
 using System.Threading;
+using System.Collections.Generic;
 
 Console.WriteLine("RadiantPi Tool");
 Console.WriteLine();
@@ -45,16 +46,20 @@ var port = new SerialPort {
     ReadTimeout = 1_000,
     WriteTimeout = 1_000
 };
-port.DataReceived += (sender, args) => {
-    var received = ((SerialPort)sender).ReadExisting();
-    Console.WriteLine($"received: '{string.Join("", received.Select(EscapeChar))}'");
-};
+
+// add handler for receiving bytes
+ReceiveData(port, buffer => {
+    var received = BytesToString(buffer);
+    Console.WriteLine($"received: '{received}'");
+});
+
+// open port and wait for user to exit or port to be closed
 Console.WriteLine($"Opening port {args[0]} (Press ESC to stop)");
 port.Open();
 try {
 
     // send data to initiate communication
-    Write("ZQI23");
+    Write(port, "ZQI23");
 
     // listen on port until closed or user exits
     while(port.IsOpen) {
@@ -76,15 +81,40 @@ try {
 }
 
 // local functions
-string EscapeChar(char c) => c switch {
-    >= (char)32 and < (char)128 => c.ToString(),
-    '\r' => "\\r",
-    '\n' => "\\n",
-    _ => $"\\u{(int)c:X4}"
-};
+static string BytesToString(IEnumerable<byte> bytes) => string.Join("", bytes.Select(b => b switch {
+    >= 32 and < 128 => b.ToString(),
+    (byte)'\r' => "\\r",
+    (byte)'\n' => "\\n",
+    _ => $"\\u{b:X4}"
+}));
 
-void Write(string command) {
-    var bytes = Encoding.UTF8.GetBytes(command);
+static void Write(SerialPort port, string command) {
+    var bytes = Encoding.ASCII.GetBytes(command);
     port.Write(bytes, 0, bytes.Length);
+}
 
+static async void ReceiveData(SerialPort port, Action<byte[]> callback) {
+    var blockLimit = 64;
+    byte[] buffer = new byte[blockLimit];
+    try {
+    again:
+
+        // initiate an asynchronous read operation
+        var actualLength = await port.BaseStream.ReadAsync(buffer, 0, buffer.Length);
+        if(actualLength == 0) {
+
+            // we're done
+            return;
+        }
+
+        // copy received data to a new buffere and invoke callback
+        byte[] received = new byte[actualLength];
+        Buffer.BlockCopy(buffer, 0, received, 0, actualLength);
+        callback(received);
+
+        // continue receiving more data
+        goto again;
+    } catch(Exception e) {
+        Console.WriteLine($"ERROR ReadAsync(): {e}");
+    }
 }
