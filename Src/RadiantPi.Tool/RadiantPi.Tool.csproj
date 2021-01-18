@@ -2,13 +2,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
-    <RootNamespace>RadiantPi.Cli</RootNamespace>
+    <RootNamespace>RadiantPi.Tool</RootNamespace>
     <NoWarn>CS1998</NoWarn>
     <Deterministic>true</Deterministic>
 
-    <PackageId>RadiantPi.Cli</PackageId>
+    <PackageId>RadiantPi.Tool</PackageId>
     <Version>1.0</Version>
-    <Title>RadiantPi CLI</Title>
+    <Title>RadiantPi Tool</Title>
     <Description>Command line tool for Lumagen RadiancePro</Description>
     <Copyright>Copyright (C) 2020</Copyright>
     <Authors>Bjorg</Authors>

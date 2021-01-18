@@ -1,5 +1,5 @@
 ﻿/*
- * RadiantPi.Cli - Command line tool for Lumagen RadiancePro
+ * RadiantPi.Tool - Command line tool for Lumagen RadiancePro
  * Copyright (C) 2020 - Steve G. Bjorg
  *
  * This program is free software: you can redistribute it and/or modify it
@@ -22,7 +22,7 @@ using System.IO.Ports;
 using System.Text;
 using System.Threading;
 
-Console.WriteLine("RadiantPi CLI");
+Console.WriteLine("RadiantPi Tool");
 Console.WriteLine();
 
 // list available serial ports
