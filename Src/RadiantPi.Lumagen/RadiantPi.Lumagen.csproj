@@ -7,7 +7,7 @@
 
     <PackageId>RadiantPi.Lumagen</PackageId>
     <Version>1.0</Version>
-    <Title>RadiantPi.Lumagen</Title>
+    <Title>RadiantPi Lumagen Client Library</Title>
     <Description>Communication client for Lumagen RadiancePro</Description>
     <Copyright>Copyright (C) 2020</Copyright>
     <Authors>Bjorg</Authors>
