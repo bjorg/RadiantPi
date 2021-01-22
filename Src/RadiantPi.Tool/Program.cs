@@ -21,6 +21,7 @@ using System.Linq;
 using System.IO.Ports;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Collections.Generic;
 
 Console.WriteLine("RadiantPi Tool");
@@ -47,19 +48,19 @@ var port = new SerialPort {
     WriteTimeout = 1_000
 };
 
+// open port and wait for user to exit or port to be closed
+Console.WriteLine($"Opening port {args[0]} (Press ESC to stop)");
+port.Open();
+
 // add handler for receiving bytes
 ReceiveData(port, buffer => {
     var received = BytesToString(buffer);
     Console.WriteLine($"received: '{received}'");
 });
-
-// open port and wait for user to exit or port to be closed
-Console.WriteLine($"Opening port {args[0]} (Press ESC to stop)");
-port.Open();
 try {
 
     // send data to initiate communication
-    Write(port, "ZQI23");
+    await WriteAsync(port, "ZQI23");
 
     // listen on port until closed or user exits
     while(port.IsOpen) {
@@ -82,15 +83,16 @@ try {
 
 // local functions
 static string BytesToString(IEnumerable<byte> bytes) => string.Join("", bytes.Select(b => b switch {
-    >= 32 and < 128 => b.ToString(),
+    >= 32 and < 128 => ((char)b).ToString(),
     (byte)'\r' => "\\r",
     (byte)'\n' => "\\n",
     _ => $"\\u{b:X4}"
 }));
 
-static void Write(SerialPort port, string command) {
+static async Task WriteAsync(SerialPort port, string command) {
     var bytes = Encoding.ASCII.GetBytes(command);
-    port.Write(bytes, 0, bytes.Length);
+    Console.WriteLine($"sending: '{BytesToString(bytes)}'");
+    await port.BaseStream.WriteAsync(bytes, 0, bytes.Length);
 }
 
 static async void ReceiveData(SerialPort port, Action<byte[]> callback) {
