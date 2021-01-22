@@ -54,4 +54,4 @@ RadiancePro Settings
 
 This application is distributed under the GNU Affero General Public License v3.0 or later.
 
-Copyright (C) 2020 - Steve G. Bjorg
+Copyright (C) 2020-2021 - Steve G. Bjorg

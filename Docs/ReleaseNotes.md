@@ -2,6 +2,10 @@
 
 ## v0.2 (TBD)
 
+### Features
+
+* Added interface for showing mode information including source and output using "Full v3" format.
+
 ### Fixes
 
 * Added reloading of an edited label to reflect the actual value on the device. This change applies to all label types (input, custom mode, CMS, and style).
