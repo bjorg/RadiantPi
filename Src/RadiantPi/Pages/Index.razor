@@ -29,85 +29,87 @@
 <h2>Device</h2>
 <form>
     <fieldset disabled=@Disabled>
-        @RenderLabel("device-model-name", "Model Name", DeviceInfo.ModelName)
-        @RenderLabel("device-model-nr", "Model Nr", DeviceInfo.ModelNumber)
-        @RenderLabel("device-serial-nr", "Serial Nr", DeviceInfo.SerialNumber)
-        @RenderLabel("device-software-revision", "Software", DeviceInfo.SoftwareRevision)
+        @RenderLabel("device-model-name", "Model Name", DeviceInfo?.ModelName ?? "(loading...)")
+        @RenderLabel("device-model-nr", "Model Nr", DeviceInfo?.ModelNumber ?? "(loading...)")
+        @RenderLabel("device-serial-nr", "Serial Nr", DeviceInfo?.SerialNumber ?? "(loading...)")
+        @RenderLabel("device-software-revision", "Software", DeviceInfo?.SoftwareRevision ?? "(loading...)")
     </fieldset>
 </form>
 
 <h2>Input</h2>
 <form>
     <fieldset disabled=@Disabled>
-        @RenderLabel("input-status", "Status", ModeInfo.InputStatus.ToString())
-        @RenderLabel("input-active-config", "Active Configuration", ModeInfo.ActiveInputConfigNumber)
-        @RenderLabel("source-vertical-resolution", "Vertical Resolution", InputVerticalResolution)
-        @RenderLabel("source-vertical-refresh-rate", "Refresh Rate", InputVerticalRefreshRate)
-        @RenderLabel("source-raster-aspect-ratio", "Aspect Ratio (Raster)", InputRasterAspectRatio)
-        @RenderLabel("source-content-aspect-ratio", "Aspect Ratio (Content)", InputContentAspectRatio)
-        @RenderLabel("source-dynamic-range", "Dynamic Range", ModeInfo.SourceDynamicRange.ToString())
-        @RenderLabel("source-3d-mode", "3D Mode", ModeInfo.Source3DMode.ToString())
+        @RenderLabel("input-status", "Status", ModeInfo?.InputStatus.ToString() ?? "(loading...)")
+        @RenderLabel("input-active-config", "Active Configuration", ModeInfo?.ActiveInputConfigNumber ?? "(loading...)")
+        @RenderLabel("source-vertical-resolution", "Vertical Resolution", InputVerticalResolution ?? "(loading...)")
+        @RenderLabel("source-vertical-refresh-rate", "Refresh Rate", InputVerticalRefreshRate ?? "(loading...)")
+        @RenderLabel("source-raster-aspect-ratio", "Aspect Ratio (Raster)", InputRasterAspectRatio ?? "(loading...)")
+        @RenderLabel("source-content-aspect-ratio", "Aspect Ratio (Content)", InputContentAspectRatio ?? "(loading...)")
+        @RenderLabel("source-dynamic-range", "Dynamic Range", ModeInfo?.SourceDynamicRange.ToString() ?? "(loading...)")
+        @RenderLabel("source-3d-mode", "3D Mode", ModeInfo?.Source3DMode.ToString() ?? "(loading...)")
     </fieldset>
 </form>
 
 <h2>Output</h2>
 <form>
     <fieldset disabled=@Disabled>
-        @RenderLabel("output-enabled", "Outputs", Convert.ToString(ModeInfo.OutputEnabled, 2).PadLeft(16, '0'))
-        @RenderLabel("output-vertical-resolution", "Vertial Resolution", OutputVerticalResolution)
-        @RenderLabel("output-vertical-refresh-rate", "Refresh Rate", OutputVerticalRefreshRate)
-        @RenderLabel("output-aspect-ratio-nls", "Aspect Ratio", OutputAspectRatio)
-        @RenderLabel("output-color-space", "Color Space", ModeInfo.OutputColorSpace.ToString())
-        @RenderLabel("output-cms", "CMS", OutputCmsLabel)
-        @RenderLabel("output-style", "Style", OutputStyleLabel)
-        @RenderLabel("output-3d-mode", "3D Mode", ModeInfo.Output3DMode.ToString())
+        @RenderLabel("output-enabled", "Outputs", OutputEnabled ?? "(loading...)")
+        @RenderLabel("output-vertical-resolution", "Vertial Resolution", OutputVerticalResolution ?? "(loading...)")
+        @RenderLabel("output-vertical-refresh-rate", "Refresh Rate", OutputVerticalRefreshRate ?? "(loading...)")
+        @RenderLabel("output-aspect-ratio-nls", "Aspect Ratio", OutputAspectRatio ?? "(loading...)")
+        @RenderLabel("output-color-space", "Color Space", ModeInfo?.OutputColorSpace.ToString() ?? "(loading...)")
+        @RenderLabel("output-cms", "CMS", OutputCmsLabel ?? "(loading...)")
+        @RenderLabel("output-style", "Style", OutputStyleLabel ?? "(loading...)")
+        @RenderLabel("output-3d-mode", "3D Mode", ModeInfo?.Output3DMode.ToString() ?? "(loading...)")
     </fieldset>
 </form>
 
 @code {
 
+    //--- Fields ---
+    private Dictionary<RadianceProStyle, string> _styleLabels = new();
+    private Dictionary<RadianceProCms, string> _cmsLabels = new();
+
     //--- Properties ---
-    protected bool Disabled { get; set; } = true;
-    protected string InputVerticalResolution { get; set; } = "(loading...)";
-    protected string InputVerticalRefreshRate { get; set; } = "(loading...)";
-    protected string InputContentAspectRatio { get; set; } = "(loading...)";
-    protected string InputRasterAspectRatio { get; set; } = "(loading...)";
-    protected string OutputVerticalResolution { get; set; } = "(loading...)";
-    protected string OutputVerticalRefreshRate { get; set; } = "(loading...)";
-    protected string OutputAspectRatio { get; set; } = "(loading...)";
-    protected string OutputStyleLabel { get; set; } = "(loading...)";
-    protected string OutputCmsLabel { get; set; } = "(loading...)";
+    private bool Disabled { get; set; } = true;
 
-    protected GetDeviceInfoResponse DeviceInfo { get; set; } = new GetDeviceInfoResponse {
-        ModelName = "(loading...)",
-        ModelNumber = "(loading...)",
-        SerialNumber = "(loading...)",
-        SoftwareRevision = "(loading...)"
-    };
+    private string InputVerticalResolution => (ModeInfo != null)
+        ? ToResolution(ModeInfo.SourceVerticalResolution, ModeInfo.SourceVideoMode)
+        : null;
 
-    protected GetModeInfoResponse ModeInfo { get; set; } = new GetModeInfoResponse {
-        ActiveInputConfigNumber = "(loading...)",
-        InputStatus = RadianceProInputStatus.Undefined,
-        Output3DMode = RadiancePro3D.Undefined,
-        OutputAspectRatio = "(loading...)",
-        OutputCms = RadianceProCms.Undefined,
-        OutputColorSpace = RadianceProColorSpace.Undefined,
-        OutputEnabled = 0,
-        OutputNonLinearStretchActive = false,
-        OutputStyle = RadianceProStyle.Undefined,
-        OutputVerticalRate = "(loading...)",
-        OutputVerticalResolution = "(loading...)",
-        OutputVideoMode = RadianceProVideoMode.Undefined,
-        PhysicalInputSelected = 0,
-        Source3DMode = RadiancePro3D.Undefined,
-        SourceContentAspectRatio = "(loading...)",
-        SourceDynamicRange = RadianceProDynamicRange.Undefined,
-        SourceRasterAspectRatio = "(loading...)",
-        SourceVerticalRate = "(loading...)",
-        SourceVerticalResolution = "(loading...)",
-        SourceVideoMode = RadianceProVideoMode.Undefined,
-        VirtualInputSelected = 0
-    };
+    private string InputVerticalRefreshRate => (ModeInfo != null)
+        ? ToRefreshRate(ModeInfo.SourceVerticalRate)
+        : null;
+
+    private string InputContentAspectRatio => (ModeInfo != null)
+        ? ToAspectRatio(ModeInfo.SourceContentAspectRatio)
+        : null;
+
+    private string InputRasterAspectRatio => (ModeInfo != null)
+        ? ToAspectRatio(ModeInfo.SourceRasterAspectRatio)
+        : null;
+
+    private string OutputEnabled => (ModeInfo != null)
+        ? Convert.ToString(ModeInfo.OutputEnabled, 2).PadLeft(16, '0')
+        : null;
+
+    private string OutputVerticalResolution => (ModeInfo != null)
+        ? ToResolution(ModeInfo.OutputVerticalResolution, ModeInfo.OutputVideoMode)
+        : null;
+
+    private string OutputVerticalRefreshRate => (ModeInfo != null)
+        ? ToRefreshRate(ModeInfo.OutputVerticalRate)
+        : null;
+
+    private string OutputAspectRatio => (ModeInfo != null)
+        ? ToAspectRatio(ModeInfo.OutputAspectRatio, ModeInfo.OutputNonLinearStretchActive)
+        : null;
+
+
+    private string OutputCmsLabel { get; set; }
+    private string OutputStyleLabel { get; set; }
+    private GetDeviceInfoResponse DeviceInfo { get; set; }
+    private GetModeInfoResponse ModeInfo { get; set; }
 
     //--- Methods ---
     protected override async Task OnInitializedAsync() {
@@ -116,22 +118,15 @@
         // initialize UI
         DeviceInfo = await Client.GetDeviceInfoAsync();
         ModeInfo = await Client.GetModeInfoAsync();
-        InputVerticalResolution = ToResolution(ModeInfo.SourceVerticalResolution, ModeInfo.SourceVideoMode);
-        InputVerticalRefreshRate = ToRefreshRate(ModeInfo.SourceVerticalRate);
-        InputContentAspectRatio = ToAspectRatio(ModeInfo.SourceContentAspectRatio);
-        InputRasterAspectRatio = ToAspectRatio(ModeInfo.SourceRasterAspectRatio);
-        OutputVerticalResolution = ToResolution(ModeInfo.OutputVerticalResolution, ModeInfo.OutputVideoMode);
-        OutputVerticalRefreshRate = ToRefreshRate(ModeInfo.OutputVerticalRate);
-        OutputAspectRatio = ToAspectRatio(ModeInfo.OutputAspectRatio, ModeInfo.OutputNonLinearStretchActive);
-        OutputStyleLabel = await Client.GetStyleLabelAsync(ModeInfo.OutputStyle);
-        OutputCmsLabel = await Client.GetCmsLabelAsync(ModeInfo.OutputCms);
+        OutputStyleLabel = await GetStyleLabelAsync(ModeInfo.OutputStyle);
+        OutputCmsLabel = await GetCmsLabelAsync(ModeInfo.OutputCms);
         Disabled = false;
 
         // register event handler for mode changes
         Client.ModeInfoChanged += OnModeInfoChanged;
     }
 
-    protected RenderFragment RenderLabel(string id, string title, string value) {
+    private RenderFragment RenderLabel(string id, string title, string value) {
         return @<div class="form-group row">
             <label for=@id class="col-sm col-xl-3 col-form-label">@title</label>
             <div class="col-sm col-xl-3">
@@ -140,7 +135,7 @@
         </div>;
     }
 
-    protected string ToResolution(string resolution, RadianceProVideoMode mode) {
+    private string ToResolution(string resolution, RadianceProVideoMode mode) {
         switch(mode) {
         case RadianceProVideoMode.Progressive:
             return resolution + "p";
@@ -151,7 +146,7 @@
         }
     }
 
-    protected string ToAspectRatio(string aspectRatio, bool nls = false) {
+    private string ToAspectRatio(string aspectRatio, bool nls = false) {
         var result = (aspectRatio.Length == 3) && aspectRatio.All(c => char.IsDigit(c))
             ? $"{aspectRatio[0]}.{aspectRatio.Substring(1)}"
             : aspectRatio;
@@ -160,7 +155,7 @@
             : result;
     }
 
-    protected string ToRefreshRate(string refreshRate)
+    private string ToRefreshRate(string refreshRate)
         => refreshRate switch {
             "023" => "23.98 FPS",
             "024" => "24 FPS",
@@ -174,15 +169,33 @@
         };
 
     private void OnModeInfoChanged(object sender, GetModeInfoResponse response) =>
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
 
             // TODO: remove this code
             Console.WriteLine("OnModeInfoChanged received");
 
             // update mode info and refresh state
             ModeInfo = response;
+            OutputStyleLabel = await GetStyleLabelAsync(ModeInfo.OutputStyle);
+            OutputCmsLabel = await GetCmsLabelAsync(ModeInfo.OutputCms);
             StateHasChanged();
         });
+
+    private async Task<string> GetStyleLabelAsync(RadianceProStyle style) {
+        if(!_styleLabels.TryGetValue(style, out var result)) {
+            result = await Client.GetStyleLabelAsync(style);
+            _styleLabels[style] = result;
+        }
+        return result;
+    }
+
+    private async Task<string> GetCmsLabelAsync(RadianceProCms cms) {
+        if(!_cmsLabels.TryGetValue(cms, out var result)) {
+            result = await Client.GetCmsLabelAsync(cms);
+            _cmsLabels[cms] = result;
+        }
+        return result;
+    }
 
     //--- IDisposable Members ---
     void IDisposable.Dispose() {
