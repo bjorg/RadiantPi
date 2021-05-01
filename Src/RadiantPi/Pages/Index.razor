@@ -39,8 +39,6 @@
 <h2>Input</h2>
 <form>
     <fieldset disabled=@Disabled>
-        @RenderLabel("input-physical-input", "Physical Input", ModeInfo.PhysicalInputSelected.ToString())
-        @RenderLabel("input-virtual-input", "Virtual Input", ModeInfo.VirtualInputSelected.ToString())
         @RenderLabel("input-status", "Status", ModeInfo.InputStatus.ToString())
         @RenderLabel("input-active-config", "Active Configuration", ModeInfo.ActiveInputConfigNumber)
         @RenderLabel("source-vertical-resolution", "Vertical Resolution", InputVerticalResolution)
@@ -182,7 +180,7 @@
 
         // update mode info and refresh state
         ModeInfo = response;
-        StateHasChanged();
+        InvokeAsync(StateHasChanged);
     }
 
     //--- IDisposable Members ---
