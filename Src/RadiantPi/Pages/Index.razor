@@ -20,6 +20,8 @@
 
 @using RadiantPi.Lumagen.Model
 
+@implements IDisposable
+
 @inject IRadiancePro Client
 
 <h1>Status</h1>
@@ -112,6 +114,8 @@
     //--- Methods ---
     protected override async Task OnInitializedAsync() {
         await base.OnInitializedAsync();
+
+        // initialize UI
         DeviceInfo = await Client.GetDeviceInfoAsync();
         ModeInfo = await Client.GetModeInfoAsync();
         InputVerticalResolution = ToResolution(ModeInfo.SourceVerticalResolution, ModeInfo.SourceVideoMode);
@@ -124,6 +128,9 @@
         OutputStyleLabel = await Client.GetStyleLabelAsync(ModeInfo.OutputStyle);
         OutputCmsLabel = await Client.GetCmsLabelAsync(ModeInfo.OutputCms);
         Disabled = false;
+
+        // register event handler for mode changes
+        Client.ModeInfoChanged += OnModeInfoChanged;
     }
 
     protected RenderFragment RenderLabel(string id, string title, string value) {
@@ -167,4 +174,20 @@
             "060" => "60 FPS",
             _ => refreshRate
         };
+
+    private void OnModeInfoChanged(object sender, GetModeInfoResponse response) {
+
+        // TODO: remove this code
+        Console.WriteLine("OnModeInfoChanged received");
+
+        // update mode info and refresh state
+        ModeInfo = response;
+        StateHasChanged();
+    }
+
+    //--- IDisposable Members ---
+    void IDisposable.Dispose() {
+        Console.WriteLine("OnModeInfoChanged handler removed");
+        Client.ModeInfoChanged -= OnModeInfoChanged;
+    }
 }
