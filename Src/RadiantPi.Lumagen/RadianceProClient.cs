@@ -160,7 +160,9 @@ namespace RadiantPi.Lumagen {
         }
 
         public async Task<GetModeInfoResponse> GetModeInfoAsync() {
-            var response = await SendAsync("ZQI23", expectResponse: true);
+
+            // NOTE (2021-05-01, bjorg): ZQI23 keeps locking up the RadiancePro, using ZQI22 instead
+            var response = await SendAsync("ZQI22", expectResponse: true);
             return ParseModeInfoResponse(response);
         }
 
@@ -182,13 +184,25 @@ namespace RadiantPi.Lumagen {
         public Task SetCmsLabelAsync(RadianceProCms cms, string value)
             => SendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
-        public Task<string> GetStyleLabelAsync(RadianceProStyle style) => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
+        public Task<string> GetStyleLabelAsync(RadianceProStyle style)
+            => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
 
         public Task SetStyleLabelAsync(RadianceProStyle style, string value)
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
+        // TODO:
+
+        // ZY0M<CR>
+        //  Set zoom factor to M: Where M can be 0-2 (or 0-7 if zoom is set for 5% steps)
+
+        // ZY2MMMNNNOOOPPP<CR>
+        //  Set output shrink parameters: MMM=top, NNN=left, OOO=bottom, PPP=right edge. Range is 0-255 for each.
+
+        // ZQO03
+        //  Output shrink: Returns (top,left,bottom,right) 000-255 pixels (decimal)
+
         public void Dispose() {
-            Log("Disponse");
+            Log("Dispose");
             _serialPort.DataReceived -= SerialDataReceived;
             _mutex.Dispose();
             if(_serialPort.IsOpen) {
@@ -290,9 +304,17 @@ namespace RadiantPi.Lumagen {
         }
 
         private void DispatchEvents(object sender, string response) {
-            const string MODEINFORESPONSE = "!I23,";
-            if(response.StartsWith(MODEINFORESPONSE, StringComparison.Ordinal)) {
-                var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODEINFORESPONSE.Length));
+
+            // parse mode information event
+            const string MODE_INFO_RESPONSE_V1 = "!I21,";
+            const string MODE_INFO_RESPONSE_V2 = "!I22,";
+            const string MODE_INFO_RESPONSE_V3 = "!I23,";
+            if(
+                response.StartsWith(MODE_INFO_RESPONSE_V1, StringComparison.Ordinal)
+                || response.StartsWith(MODE_INFO_RESPONSE_V2, StringComparison.Ordinal)
+                || response.StartsWith(MODE_INFO_RESPONSE_V3, StringComparison.Ordinal)
+            ) {
+                var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length));
                 if(modeInfoResponse != null) {
                     Log("event: GetModeInfoResponse");
                     ModeInfoChanged?.Invoke(this, modeInfoResponse);
@@ -302,44 +324,78 @@ namespace RadiantPi.Lumagen {
 
         private GetModeInfoResponse ParseModeInfoResponse(string response) {
             var data = response.Split(",");
-            if(data.Length < 21) {
-                throw new InvalidDataException("invalid GetModeInfoResponse");
-            }
-            return LogResponse(new GetModeInfoResponse {
-                InputStatus = data[0] switch {
+            GetModeInfoResponse info = new();
+            switch(data.Length) {
+            case 21:
+
+                // v3 data fields
+                info.VirtualInputSelected = uint.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture);
+                info.PhysicalInputSelected = uint.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture);
+                goto case 19;
+            case 19:
+
+                // v2 data fields
+                info.OutputColorSpace = data[15] switch {
+                    "0" => RadianceProColorSpace.CS601,
+                    "1" => RadianceProColorSpace.CS709,
+                    "2" => RadianceProColorSpace.CS2020,
+                    "3" => RadianceProColorSpace.CS2100,
+                    string invalid => throw new InvalidDataException($"invalid output color space: {invalid}")
+                };
+                info.SourceDynamicRange = data[16] switch {
+                    "0" => RadianceProDynamicRange.SDR,
+                    "1" => RadianceProDynamicRange.HDR,
+                    string invalid => throw new InvalidDataException($"invalid source dynamic range: {invalid}")
+                };
+                info.SourceVideoMode = data[17] switch {
+                    "i" => RadianceProVideoMode.Interlaced,
+                    "p" => RadianceProVideoMode.Progressive,
+                    "-" => RadianceProVideoMode.NoVideo,
+                    string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
+                };
+                info.OutputVideoMode = data[18] switch {
+                    "I" => RadianceProVideoMode.Interlaced,
+                    "P" => RadianceProVideoMode.Progressive,
+                    string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
+                };
+                goto case 15;
+            case 15:
+
+                // v1 data fields
+                info.InputStatus = data[0] switch {
                     "0" => RadianceProInputStatus.NoSource,
                     "1" => RadianceProInputStatus.ActiveVideo,
                     "2" => RadianceProInputStatus.InternalPattern,
                     string invalid => throw new InvalidDataException($"invalid input status: {invalid}")
-                },
-                SourceVerticalRate = data[1],
-                SourceVerticalResolution = data[2],
-                Source3DMode = data[3] switch {
+                };
+                info.SourceVerticalRate = data[1];
+                info.SourceVerticalResolution = data[2];
+                info.Source3DMode = data[3] switch {
                     "0" => RadiancePro3D.Off,
                     "1" => RadiancePro3D.FrameSequential,
                     "2" => RadiancePro3D.FramePacked,
                     "4" => RadiancePro3D.TopBottom,
                     "8" => RadiancePro3D.SideBySide,
                     string invalid => throw new InvalidDataException($"invalid source 3D mode: {invalid}")
-                },
-                ActiveInputConfigNumber = data[4],
-                SourceRasterAspectRatio = data[5],
-                SourceContentAspectRatio = data[6],
-                OutputNonLinearStretchActive = data[7] switch {
+                };
+                info.ActiveInputConfigNumber = data[4];
+                info.SourceRasterAspectRatio = data[5];
+                info.SourceContentAspectRatio = data[6];
+                info.OutputNonLinearStretchActive = data[7] switch {
                     "-" => false,
                     "N" => true,
                     string invalid => throw new InvalidDataException($"invalid NLS mode: {invalid}")
-                },
-                Output3DMode = data[8] switch {
+                };
+                info.Output3DMode = data[8] switch {
                     "0" => RadiancePro3D.Off,
                     "1" => RadiancePro3D.FrameSequential,
                     "2" => RadiancePro3D.FramePacked,
                     "4" => RadiancePro3D.TopBottom,
                     "8" => RadiancePro3D.SideBySide,
                     string invalid => throw new InvalidDataException($"invalid source 3D mode: {invalid}")
-                },
-                OutputEnabled = ushort.Parse(data[9], NumberStyles.HexNumber, CultureInfo.InvariantCulture),
-                OutputCms = data[10] switch {
+                };
+                info.OutputEnabled = ushort.Parse(data[9], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                info.OutputCms = data[10] switch {
                     "0" => RadianceProCms.Cms0,
                     "1" => RadianceProCms.Cms1,
                     "2" => RadianceProCms.Cms2,
@@ -349,8 +405,8 @@ namespace RadiantPi.Lumagen {
                     "6" => RadianceProCms.Cms6,
                     "7" => RadianceProCms.Cms7,
                     string invalid => throw new InvalidDataException($"invalid output cms: {invalid}")
-                },
-                OutputStyle = data[11] switch {
+                };
+                info.OutputStyle = data[11] switch {
                     "0" => RadianceProStyle.Style0,
                     "1" => RadianceProStyle.Style1,
                     "2" => RadianceProStyle.Style2,
@@ -360,36 +416,15 @@ namespace RadiantPi.Lumagen {
                     "6" => RadianceProStyle.Style6,
                     "7" => RadianceProStyle.Style7,
                     string invalid => throw new InvalidDataException($"invalid output style: {invalid}")
-                },
-                OutputVerticalRate = data[12],
-                OutputVerticalResolution = data[13],
-                OutputAspectRatio = data[14],
-                OutputColorSpace = data[15] switch {
-                    "0" => RadianceProColorSpace.CS601,
-                    "1" => RadianceProColorSpace.CS709,
-                    "2" => RadianceProColorSpace.CS2020,
-                    "3" => RadianceProColorSpace.CS2100,
-                    string invalid => throw new InvalidDataException($"invalid output color space: {invalid}")
-                },
-                SourceDynamicRange = data[16] switch {
-                    "0" => RadianceProDynamicRange.SDR,
-                    "1" => RadianceProDynamicRange.HDR,
-                    string invalid => throw new InvalidDataException($"invalid source dynamic range: {invalid}")
-                },
-                SourceVideoMode = data[17] switch {
-                    "i" => RadianceProVideoMode.Interlaced,
-                    "p" => RadianceProVideoMode.Progressive,
-                    "-" => RadianceProVideoMode.NoVideo,
-                    string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
-                },
-                OutputVideoMode = data[18] switch {
-                    "I" => RadianceProVideoMode.Interlaced,
-                    "P" => RadianceProVideoMode.Progressive,
-                    string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
-                },
-                VirtualInputSelected = uint.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture),
-                PhysicalInputSelected = uint.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture)
-            });
+                };
+                info.OutputVerticalRate = data[12];
+                info.OutputVerticalResolution = data[13];
+                info.OutputAspectRatio = data[14];
+                break;
+            default:
+                throw new InvalidDataException("invalid GetModeInfoResponse");
+            }
+            return LogResponse(info);
         }
 
         private void Log(string message) {
