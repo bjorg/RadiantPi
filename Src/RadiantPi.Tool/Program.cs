@@ -116,6 +116,9 @@ static async void ReceiveData(SerialPort port, Action<byte[]> callback) {
 
         // continue receiving more data
         goto again;
+    } catch(OperationCanceledException) {
+
+        // nothing to do
     } catch(Exception e) {
         Console.WriteLine($"ERROR ReadAsync(): {e}");
     }
