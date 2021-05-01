@@ -166,26 +166,26 @@ namespace RadiantPi.Lumagen {
             return ParseModeInfoResponse(response);
         }
 
-        public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
-            => SendAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}", expectResponse: true);
+        public async Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
+            => SanitizeText(await SendAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}", expectResponse: true), maxLength: 10);
 
         public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value)
             => SendAsync("ZY524" + $"{ToCommandCode(memory, allowAll: true)}{ToCommandCode(input)}{SanitizeText(value, maxLength: 10)}" + "\r", expectResponse: false);
 
-        public Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode)
-            => SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true);
+        public async Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode)
+            => SanitizeText(await SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true), maxLength: 7);
 
         public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value)
             => SendAsync("ZY524" + $"1{ToCommandCode(customMode)}{SanitizeText(value, maxLength: 7)}" + "\r", expectResponse: false);
 
-        public Task<string> GetCmsLabelAsync(RadianceProCms cms)
-            => SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true);
+        public async Task<string> GetCmsLabelAsync(RadianceProCms cms)
+            => SanitizeText(await SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true), maxLength: 8);
 
         public Task SetCmsLabelAsync(RadianceProCms cms, string value)
             => SendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
-        public Task<string> GetStyleLabelAsync(RadianceProStyle style)
-            => SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true);
+        public async Task<string> GetStyleLabelAsync(RadianceProStyle style)
+            => SanitizeText(await SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true), maxLength: 8);
 
         public Task SetStyleLabelAsync(RadianceProStyle style, string value)
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
@@ -435,6 +435,8 @@ namespace RadiantPi.Lumagen {
                     '\r' => "\\r",
                     _ => $"\\u{(int)c:X4}"
                 }));
+
+                // TODO: make configurable
                 Console.WriteLine($"{typeof(RadianceProClient).Name} {escapedMessage}");
             }
         }
@@ -447,6 +449,8 @@ namespace RadiantPi.Lumagen {
                         new JsonStringEnumConverter()
                     }
                 });
+
+                // TODO: make configurable
                 Console.WriteLine($"{typeof(RadianceProClient).Name} response: {serializedResponse}");
             }
             return response;
