@@ -351,6 +351,9 @@ namespace RadiantPi.Lumagen {
                     "i" => RadianceProVideoMode.Interlaced,
                     "p" => RadianceProVideoMode.Progressive,
                     "-" => RadianceProVideoMode.NoVideo,
+
+                    // TODO: waiting for response on what "n" actually means
+                    "n" => RadianceProVideoMode.NoVideo,
                     string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
                 };
                 info.OutputVideoMode = data[18] switch {
