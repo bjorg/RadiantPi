@@ -1,4 +1,4 @@
-﻿![RadiantPi Input Labels](Docs/InputLabels.png)
+﻿![RadiantPi Input Labels](Docs/Images/InputLabels.png)
 
 # RadiantPi (v0.1)
 
