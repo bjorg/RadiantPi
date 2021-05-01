@@ -16,13 +16,11 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen;
 
 namespace RadiantPi {
