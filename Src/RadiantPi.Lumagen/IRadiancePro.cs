@@ -24,6 +24,9 @@ namespace RadiantPi.Lumagen {
 
     public interface IRadiancePro : IDisposable {
 
+        //--- Events ---
+        event EventHandler<GetModeInfoResponse> ModeInfoChanged;
+
         //--- Methods ---
         Task<GetDeviceInfoResponse> GetDeviceInfoAsync();
         Task<GetModeInfoResponse> GetModeInfoAsync();

@@ -96,6 +96,9 @@ namespace RadiantPi.Lumagen {
             [$"{RadianceProStyle.Style7}"] = "STYLE7"
         };
 
+        //--- Events ---
+        public event EventHandler<GetModeInfoResponse> ModeInfoChanged;
+
         //--- Methods ---
         public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync()
             => new GetDeviceInfoResponse {
