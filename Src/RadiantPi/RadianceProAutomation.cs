@@ -80,15 +80,20 @@ namespace RadiantPi {
                 foreach(var condition in rule.Conditions) {
                     ++conditionIndex;
 
-                    // check if condition field is present
+                    // check if condition field can be found
+                    if(condition.Field == null) {
+                        Log($"{ruleName}, condition {conditionIndex} failed: missing 'Field' value");
+                        return;
+                    }
                     if(!modeChangedEvent.TryGetValue(condition.Field, out var value)) {
-                        Log($"{ruleName}, condition {conditionIndex} failed: missing field '{condition.Field}'");
+                        Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}' not found in event");
                         return;
                     }
 
                     // check if value matches operation condition
-                    switch(condition.Operation ?? "Equals") {
+                    switch(condition.Operation) {
                     case "Equals":
+                    case null:
                         if(value != condition.Value) {
                             Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}' is not equal '{condition.Value}' (actual: '{value}')");
                             return;
