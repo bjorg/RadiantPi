@@ -22,6 +22,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RadiantPi.Lumagen;
+using RadiantPi.Model;
 
 namespace RadiantPi {
 
@@ -45,29 +46,27 @@ namespace RadiantPi {
             services.AddSingleton<IRadiancePro>(_ => {
                 var radiancePro = Configuration.GetSection("RadiancePro");
                 var config = radiancePro.Get<RadianceProClientConfig>();
-                if(config == null) {
+                if((config == null) || (config.PortName == null) || config.Mock.GetValueOrDefault()) {
 
                     // default to mock configuration when no configuration is found
-                    LogWarn("no 'RadiancePro' section found in appsettings.json file; defaulting to mock client configuration");
+                    LogWarn("using RadiancePro mock client configuration");
                     config = new RadianceProClientConfig(
-                        PortName = null,
-                        BaudRate = null,
-                        Mock = true,
-                        Verbose = null
+                        PortName: null,
+                        BaudRate: null,
+                        Mock: true,
+                        Verbose: null
                     );
-                } else if(!config.Mock.GetValueOrDefault() && (config.PortName == null)) {
-
-                    // find first available serial port
-                    LogWarn("no 'PortName' property specified for RadiancePro section; defaulting to mock client configuration");
-                    config = new RadianceProClientConfig {
-                        Mock = true
-                    };
                 }
-                var modeChanged = radiancePro.GetSection("ModeChanged");
 
-                // TODO: ...
+                // initialize client
+                var client = RadianceProClient.Initialize(config);
 
-                return RadianceProClient.Initialize(config);
+                // initialize client automation
+                var automation = radiancePro.GetSection("Automation").Get<RadianceProAutomationConfig>();
+                if(automation != null) {
+                    RadianceProAutomation.New(client, automation);
+                }
+                return client;
             });
 
             // local functions

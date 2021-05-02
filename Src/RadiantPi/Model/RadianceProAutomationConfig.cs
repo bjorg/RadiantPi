@@ -20,9 +20,24 @@ using System.Collections.Generic;
 
 namespace RadiantPi.Model {
 
-    public record ModelChangedEntry(List<ModelChangedCondition> Conditions, List<ModelChangedAction> Actions) { }
+    public record RadianceProAutomationConfig(
+        List<ModeChangedRule> ModeChangedRules
+    ) { }
 
-    public record ModelChangedCondition(string Field, string Operation, string Value) { }
+    public record ModeChangedRule(
+        string Name,
+        List<ModelChangedCondition> Conditions,
+        List<ModelChangedAction> Actions
+    ) { }
 
-    public record ModelChangedAction(string Channel, string Send) { }
+    public record ModelChangedCondition(
+        string Field,
+        string Operation,
+        string Value
+    ) { }
+
+    public record ModelChangedAction(
+        string Target,
+        string Send
+    ) { }
 }

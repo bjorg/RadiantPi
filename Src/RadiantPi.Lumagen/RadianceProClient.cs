@@ -31,7 +31,7 @@ using RadiantPi.Lumagen.Model;
 namespace RadiantPi.Lumagen {
 
     public sealed record RadianceProClientConfig(
-        string? PortName,
+        string PortName,
         int? BaudRate,
         bool? Mock,
         bool? Verbose
@@ -211,7 +211,7 @@ namespace RadiantPi.Lumagen {
             _serialPort.Dispose();
         }
 
-        private async Task<string> SendAsync(string command, bool expectResponse) {
+        public async Task<string> SendAsync(string command, bool expectResponse) {
             var buffer = Encoding.UTF8.GetBytes(command);
             await _mutex.WaitAsync();
             try {
@@ -348,10 +348,10 @@ namespace RadiantPi.Lumagen {
                 info.SourceVideoMode = data[17] switch {
                     "i" => RadianceProVideoMode.Interlaced,
                     "p" => RadianceProVideoMode.Progressive,
-                    "-" => RadianceProVideoMode.NoVideo,
 
-                    // TODO: waiting for response on what "n" actually means
+                    // NOTE (2021-05-01, bjorg): the documentation uses "-", but support said that "n" is the correct response
                     "n" => RadianceProVideoMode.NoVideo,
+                    "-" => RadianceProVideoMode.NoVideo,
 
                     string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
                 };

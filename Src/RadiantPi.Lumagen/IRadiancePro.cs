@@ -38,5 +38,6 @@ namespace RadiantPi.Lumagen {
         Task SetCmsLabelAsync(RadianceProCms cms, string value);
         Task<string> GetStyleLabelAsync(RadianceProStyle style);
         Task SetStyleLabelAsync(RadianceProStyle style, string value);
+        Task<string> SendAsync(string command, bool expectResponse);
     }
 }

@@ -188,6 +188,9 @@ namespace RadiantPi.Lumagen {
             return Task.CompletedTask;
         }
 
+        public Task<string> SendAsync(string command, bool expectResponse)
+            => Task.FromResult((string)null);
+
         public void Dispose() => _disposed = true;
 
         private void CheckNotDisposed() {
