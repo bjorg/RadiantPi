@@ -34,13 +34,21 @@ namespace RadiantPi {
 
             //--- Methods ---
             public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-                if(reader.TokenType == JsonTokenType.Number) {
+                switch(reader.TokenType) {
+                case JsonTokenType.String:
+                    return reader.GetString();
+                case JsonTokenType.Number:
                     var stringValue = reader.GetInt32();
                     return stringValue.ToString();
-                } else if(reader.TokenType == JsonTokenType.String) {
-                    return reader.GetString();
+                case JsonTokenType.True:
+                    return "true";
+                case JsonTokenType.False:
+                    return "false";
+                case JsonTokenType.Null:
+                    return "null";
+                default:
+                    throw new System.Text.Json.JsonException();
                 }
-                throw new System.Text.Json.JsonException();
             }
 
             public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
