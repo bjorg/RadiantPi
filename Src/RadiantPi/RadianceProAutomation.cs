@@ -149,7 +149,7 @@ namespace RadiantPi {
                         }
                         conditionsMatched.Add($"'{condition.Field}' < '{condition.Value}'");
                         break;
-                    case "LessThanOrEquals":
+                    case "LessThanOrEqual":
                         if(string.Compare(value, condition.Value, StringComparison.Ordinal) > 0) {
                             Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not less than or equal to '{condition.Value}'");
                             return;
