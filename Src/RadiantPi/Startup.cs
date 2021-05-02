@@ -43,14 +43,18 @@ namespace RadiantPi {
 
             // add RadiancePro client configuration
             services.AddSingleton<IRadiancePro>(_ => {
-                var config = Configuration.GetSection("RadiancePro").Get<RadianceProClientConfig>();
+                var radiancePro = Configuration.GetSection("RadiancePro");
+                var config = radiancePro.Get<RadianceProClientConfig>();
                 if(config == null) {
 
                     // default to mock configuration when no configuration is found
                     LogWarn("no 'RadiancePro' section found in appsettings.json file; defaulting to mock client configuration");
-                    config = new RadianceProClientConfig {
-                        Mock = true
-                    };
+                    config = new RadianceProClientConfig(
+                        PortName = null,
+                        BaudRate = null,
+                        Mock = true,
+                        Verbose = null
+                    );
                 } else if(!config.Mock.GetValueOrDefault() && (config.PortName == null)) {
 
                     // find first available serial port
@@ -59,6 +63,10 @@ namespace RadiantPi {
                         Mock = true
                     };
                 }
+                var modeChanged = radiancePro.GetSection("ModeChanged");
+
+                // TODO: ...
+
                 return RadianceProClient.Initialize(config);
             });
 
