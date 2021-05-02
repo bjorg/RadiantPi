@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -104,13 +105,13 @@ namespace RadiantPi {
         }
 
         private async Task EvaluateRule(string ruleName, ModeChangedRule rule, Dictionary<string, string> modeChangedEvent) {
+            List<string> conditionsMatched = new();
 
             // check if all conditions are met
             if(rule.Conditions != null) {
 
                 // check if all conditions are met
                 var conditionIndex = 0;
-                List<string> condtionsMatched = new();
                 foreach(var condition in rule.Conditions) {
                     ++conditionIndex;
 
@@ -128,46 +129,46 @@ namespace RadiantPi {
                     switch(condition.Operation) {
                     case "Equal":
                     case null:
-                        if(value != condition.Value) {
+                        if(string.Compare(value, condition.Value, StringComparison.Ordinal) != 0) {
                             Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not equal to '{condition.Value}'");
                             return;
                         }
-                        condtionsMatched.Add($"'{condition.Field}' == '{condition.Value}'");
+                        conditionsMatched.Add($"'{condition.Field}' == '{condition.Value}'");
                         break;
                     case "NotEqual":
-                        if(value == condition.Value) {
+                        if(string.Compare(value, condition.Value, StringComparison.Ordinal) == 0) {
                             Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not equal to '{condition.Value}'");
                             return;
                         }
-                        condtionsMatched.Add($"'{condition.Field}' == '{condition.Value}'");
+                        conditionsMatched.Add($"'{condition.Field}' == '{condition.Value}'");
                         break;
                     case "LessThan":
-                        if(value >= condition.Value) {
+                        if(string.Compare(value, condition.Value, StringComparison.Ordinal) >= 0) {
                             Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not less than '{condition.Value}'");
                             return;
                         }
-                        condtionsMatched.Add($"'{condition.Field}' < '{condition.Value}'");
+                        conditionsMatched.Add($"'{condition.Field}' < '{condition.Value}'");
                         break;
                     case "LessThanOrEquals":
-                        if(value > condition.Value) {
+                        if(string.Compare(value, condition.Value, StringComparison.Ordinal) > 0) {
                             Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not less than or equal to '{condition.Value}'");
                             return;
                         }
-                        condtionsMatched.Add($"'{condition.Field}' <= '{condition.Value}'");
+                        conditionsMatched.Add($"'{condition.Field}' <= '{condition.Value}'");
                         break;
                     case "GreaterThan":
-                        if(value <= condition.Value) {
+                        if(string.Compare(value, condition.Value, StringComparison.Ordinal) <= 0) {
                             Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not greater than '{condition.Value}'");
                             return;
                         }
-                        condtionsMatched.Add($"'{condition.Field}' > '{condition.Value}'");
+                        conditionsMatched.Add($"'{condition.Field}' > '{condition.Value}'");
                         break;
                     case "GreaterThanOrEqual":
-                        if(value < condition.Value) {
+                        if(string.Compare(value, condition.Value, StringComparison.Ordinal) < 0) {
                             Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not greater than or equal to '{condition.Value}'");
                             return;
                         }
-                        condtionsMatched.Add($"'{condition.Field}' >= '{condition.Value}'");
+                        conditionsMatched.Add($"'{condition.Field}' >= '{condition.Value}'");
                         break;
                     default:
                         Log($"{ruleName}, condition {conditionIndex} failed: unrecognized operation '{condition.Operation ?? "<null>"}'");
@@ -179,7 +180,9 @@ namespace RadiantPi {
             // apply all actions
             if(rule.Actions != null) {
                 var actionIndex = 0;
-                Log($"{ruleName} matched: {string.Join(", ", condtionsMatched)}");
+                if(conditionsMatched.Any()) {
+                    Log($"{ruleName} matched: {string.Join(", ", conditionsMatched)}");
+                }
                 foreach(var action in rule.Actions) {
                     ++actionIndex;
                     if(action.Send == null) {
