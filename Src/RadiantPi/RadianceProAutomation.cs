@@ -192,7 +192,7 @@ namespace RadiantPi {
                     switch(action.Target) {
                     case "RadiancePro":
                     case null:
-                        Log($"{ruleName}, action {actionIndex} sending to 'RadiancePro': '{action.Send}'");
+                        Log($"{ruleName}, action {actionIndex} sending command to 'RadiancePro': '{action.Send}'");
                         await _client.SendAsync(action.Send, expectResponse: false);
                         break;
                     default:
