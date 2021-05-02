@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using RadiantPi.Lumagen;
 using RadiantPi.Lumagen.Model;
@@ -27,6 +28,24 @@ using RadiantPi.Model;
 namespace RadiantPi {
 
     internal class RadianceProAutomation : IDisposable {
+
+        //--- Types ---
+        private class StringConverter : JsonConverter<string> {
+
+            //--- Methods ---
+            public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+                if(reader.TokenType == JsonTokenType.Number) {
+                    var stringValue = reader.GetInt32();
+                    return stringValue.ToString();
+                } else if(reader.TokenType == JsonTokenType.String) {
+                    return reader.GetString();
+                }
+                throw new System.Text.Json.JsonException();
+            }
+
+            public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
+                => throw new NotImplementedException();
+        }
 
         //--- Class Methods ---
         public static RadianceProAutomation New(IRadiancePro client, RadianceProAutomationConfig config) {
@@ -53,7 +72,14 @@ namespace RadiantPi {
         public async void OnModeInfoChanged(object sender, GetModeInfoResponse modeInfo) {
 
             // convert event details into a dictionary
-            var modeChangedEvent = JsonSerializer.Deserialize<Dictionary<string, string>>(JsonSerializer.Serialize(modeInfo));
+            var modeChangedEvent = JsonSerializer.Deserialize<Dictionary<string, string>>(
+                JsonSerializer.Serialize(modeInfo),
+                new JsonSerializerOptions {
+                    Converters = {
+                        new StringConverter()
+                    }
+                }
+            );
             var index = 0;
             foreach(var rule in _config.ModeChangedRules) {
                 ++index;
