@@ -50,12 +50,9 @@ namespace RadiantPi {
 
                     // default to mock configuration when no configuration is found
                     LogWarn("using RadiancePro mock client configuration");
-                    config = new RadianceProClientConfig(
-                        PortName: null,
-                        BaudRate: null,
-                        Mock: true,
-                        Verbose: null
-                    );
+                    config = new RadianceProClientConfig {
+                        Mock = true
+                    };
                 }
 
                 // initialize client

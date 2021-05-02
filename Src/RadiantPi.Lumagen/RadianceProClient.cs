@@ -30,12 +30,14 @@ using RadiantPi.Lumagen.Model;
 
 namespace RadiantPi.Lumagen {
 
-    public sealed record RadianceProClientConfig(
-        string PortName,
-        int? BaudRate,
-        bool? Mock,
-        bool? Verbose
-    ) { }
+    public sealed class RadianceProClientConfig {
+
+        //--- Properties ---
+        public string PortName { get; set; }
+        public int? BaudRate { get; set; }
+        public bool? Mock { get; set; }
+        public bool? Verbose { get; set; }
+    }
 
     public sealed class RadianceProClient : IRadiancePro {
 
