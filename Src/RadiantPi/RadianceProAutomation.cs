@@ -92,7 +92,6 @@ namespace RadiantPi {
             foreach(var rule in _config.ModeChangedRules) {
                 ++index;
                 var ruleName = rule.Name ?? $"Rule {index:N0}";
-                Log($"Evaluating rule '{ruleName}'");
                 await EvaluateRule(ruleName, rule, modeChangedEvent);
             }
         }
@@ -111,6 +110,7 @@ namespace RadiantPi {
 
                 // check if all conditions are met
                 var conditionIndex = 0;
+                List<string> condtionsMatched = new();
                 foreach(var condition in rule.Conditions) {
                     ++conditionIndex;
 
@@ -126,12 +126,48 @@ namespace RadiantPi {
 
                     // check if value matches operation condition
                     switch(condition.Operation) {
-                    case "Equals":
+                    case "Equal":
                     case null:
                         if(value != condition.Value) {
-                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}' is not equal '{condition.Value}' (actual: '{value}')");
+                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not equal to '{condition.Value}'");
                             return;
                         }
+                        condtionsMatched.Add($"'{condition.Field}' == '{condition.Value}'");
+                        break;
+                    case "NotEqual":
+                        if(value == condition.Value) {
+                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not equal to '{condition.Value}'");
+                            return;
+                        }
+                        condtionsMatched.Add($"'{condition.Field}' == '{condition.Value}'");
+                        break;
+                    case "LessThan":
+                        if(value >= condition.Value) {
+                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not less than '{condition.Value}'");
+                            return;
+                        }
+                        condtionsMatched.Add($"'{condition.Field}' < '{condition.Value}'");
+                        break;
+                    case "LessThanOrEquals":
+                        if(value > condition.Value) {
+                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not less than or equal to '{condition.Value}'");
+                            return;
+                        }
+                        condtionsMatched.Add($"'{condition.Field}' <= '{condition.Value}'");
+                        break;
+                    case "GreaterThan":
+                        if(value <= condition.Value) {
+                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not greater than '{condition.Value}'");
+                            return;
+                        }
+                        condtionsMatched.Add($"'{condition.Field}' > '{condition.Value}'");
+                        break;
+                    case "GreaterThanOrEqual":
+                        if(value < condition.Value) {
+                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not greater than or equal to '{condition.Value}'");
+                            return;
+                        }
+                        condtionsMatched.Add($"'{condition.Field}' >= '{condition.Value}'");
                         break;
                     default:
                         Log($"{ruleName}, condition {conditionIndex} failed: unrecognized operation '{condition.Operation ?? "<null>"}'");
@@ -143,6 +179,7 @@ namespace RadiantPi {
             // apply all actions
             if(rule.Actions != null) {
                 var actionIndex = 0;
+                Log($"{ruleName} matched: {string.Join(", ", condtionsMatched)}");
                 foreach(var action in rule.Actions) {
                     ++actionIndex;
                     if(action.Send == null) {
@@ -152,6 +189,7 @@ namespace RadiantPi {
                     switch(action.Target) {
                     case "RadiancePro":
                     case null:
+                        Log($"{ruleName}, action {actionIndex} sending to 'RadiancePro': '{action.Send}'");
                         await _client.SendAsync(action.Send, expectResponse: false);
                         break;
                     default:
@@ -159,11 +197,13 @@ namespace RadiantPi {
                         return;
                     }
                 }
+            } else {
+                Log($"{ruleName}: no actions");
             }
         }
 
-        // TODO: make logging configurable
-        private void Log(string message) => Console.WriteLine(message);
+            // TODO: make logging configurable
+        private void Log(string message) => Console.WriteLine($"{typeof(RadianceProAutomation).Name}  {message}");
 
         //--- IDisposable Members ---
         void IDisposable.Dispose() {
