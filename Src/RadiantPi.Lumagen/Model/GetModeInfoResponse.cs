@@ -74,5 +74,6 @@ namespace RadiantPi.Lumagen.Model {
         public RadianceProVideoMode OutputVideoMode { get; set; }
         public string OutputAspectRatio { get; set; }
         public RadianceProColorSpace OutputColorSpace { get; set; }
+        public string InputAspectRatio { get; set; }
     }
 }

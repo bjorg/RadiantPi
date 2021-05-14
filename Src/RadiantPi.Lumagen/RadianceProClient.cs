@@ -326,6 +326,11 @@ namespace RadiantPi.Lumagen {
             var data = response.Split(",");
             GetModeInfoResponse info = new();
             switch(data.Length) {
+            case 22:
+
+                // v4 data fields
+                info.InputAspectRatio = data[21];
+                goto case 21;
             case 21:
 
                 // v3 data fields
