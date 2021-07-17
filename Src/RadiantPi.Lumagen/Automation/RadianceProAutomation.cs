@@ -44,7 +44,7 @@ namespace RadiantPi.Lumagen.Automation {
         private IRadiancePro _client;
         private ILogger _logger;
         private Dictionary<string, ExpressionParser<ModeInfoDetails>.ExpressionDelegate> _variables = new();
-        private Dictionary<string, Rule> _rules = new();
+        private List<Rule> _rules = new();
 
         //--- Constructors ---
         public RadianceProAutomation(IRadiancePro client, AutomationConfig config, ILogger logger) {
@@ -68,13 +68,16 @@ namespace RadiantPi.Lumagen.Automation {
 
             // parse rules
             if(rules?.Any() ?? false) {
-                foreach(var (ruleName, ruleDefinition) in rules) {
+                var ruleIndex = 0;
+                foreach(var rule in rules) {
+                    ++ruleIndex;
+                    var ruleName = rule.Name ?? $"Rule #{ruleIndex}";
                     try {
-                        _rules.Add(ruleName, new() {
+                        _rules.Add(new() {
                             Name = ruleName,
-                            ConditionDefinition = ruleDefinition.Condition,
-                            Condition = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, ruleDefinition.Condition),
-                            Actions = ruleDefinition.Actions
+                            ConditionDefinition = rule.Condition,
+                            Condition = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, rule.Condition),
+                            Actions = rule.Actions
                         });
                     } catch(Exception e) {
                         _logger.LogError(e, $"error while adding rule '{ruleName}'");
@@ -103,19 +106,19 @@ namespace RadiantPi.Lumagen.Automation {
             _logger.LogDebug($"environment: {JsonSerializer.Serialize(environment, options)}");
 
             // find first rule that matches
-            foreach(var (ruleName, ruleDefinition) in _rules) {
+            foreach(var rule in _rules) {
                 try {
-                    var eval = ruleDefinition.Condition(modeInfo, environment);
-                    _logger.LogDebug($"rule '{ruleName}': {ruleDefinition.ConditionDefinition} == > {eval}");
+                    var eval = rule.Condition(modeInfo, environment);
+                    _logger.LogDebug($"rule '{rule.Name}': {rule.ConditionDefinition} ==> {eval}");
                     if(eval) {
 
                         // apply all actions
-                        _logger.LogInformation($"matched rule '{ruleName}'");
-                        await EvaluateActions(ruleName, ruleDefinition.Actions);
+                        _logger.LogInformation($"matched rule '{rule.Name}'");
+                        await EvaluateActions(rule.Name, rule.Actions);
                         break;
                     }
                 } catch(Exception e) {
-                    _logger.LogError(e, $"error while evaluating rule '{ruleName}'");
+                    _logger.LogError(e, $"error while evaluating rule '{rule.Name}'");
                     break;
                 }
             }

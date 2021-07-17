@@ -24,12 +24,13 @@ namespace RadiantPi.Lumagen.Automation.Model {
 
         //--- Properties ---
         public Dictionary<string, string> Variables { get; set; } = new();
-        public Dictionary<string, ModeChangedRule> Rules { get; set; } = new();
+        public List<ModeChangedRule> Rules { get; set; } = new();
     }
 
     public sealed class ModeChangedRule {
 
         //--- Properties ---
+        public string Name { get; set; }
         public string Condition { get; set; }
         public List<ModelChangedAction> Actions { get; set; }
     }
