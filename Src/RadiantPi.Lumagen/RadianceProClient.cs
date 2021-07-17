@@ -331,6 +331,7 @@ namespace RadiantPi.Lumagen {
             var data = response.Split(",");
             GetModeInfoResponse info = new();
             switch(data.Length) {
+            case 23:
             case 22:
 
                 // v4 data fields
