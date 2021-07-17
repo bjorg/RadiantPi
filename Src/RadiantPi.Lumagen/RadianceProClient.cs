@@ -146,7 +146,7 @@ namespace RadiantPi.Lumagen {
 
         //--- Methods ---
         public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync() {
-            var response = await SendAsync("ZQS01", expectResponse: true);
+            var response = await SendAsync("ZQS01", expectResponse: true).ConfigureAwait(false);
             var data = response.Split(",");
             if(data.Length < 4) {
                 throw new InvalidDataException("invalid response");
@@ -160,30 +160,30 @@ namespace RadiantPi.Lumagen {
         }
 
         public async Task<GetModeInfoResponse> GetModeInfoAsync() {
-            var response = await SendAsync("ZQI24", expectResponse: true);
+            var response = await SendAsync("ZQI24", expectResponse: true).ConfigureAwait(false);
             return ParseModeInfoResponse(response);
         }
 
         public async Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
-            => SanitizeText(await SendAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}", expectResponse: true), maxLength: 10);
+            => SanitizeText(await SendAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}", expectResponse: true).ConfigureAwait(false), maxLength: 10);
 
         public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value)
             => SendAsync("ZY524" + $"{ToCommandCode(memory, allowAll: true)}{ToCommandCode(input)}{SanitizeText(value, maxLength: 10)}" + "\r", expectResponse: false);
 
         public async Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode)
-            => SanitizeText(await SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true), maxLength: 7);
+            => SanitizeText(await SendAsync($"ZQS11{ToCommandCode(customMode)}", expectResponse: true).ConfigureAwait(false), maxLength: 7);
 
         public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value)
             => SendAsync("ZY524" + $"1{ToCommandCode(customMode)}{SanitizeText(value, maxLength: 7)}" + "\r", expectResponse: false);
 
         public async Task<string> GetCmsLabelAsync(RadianceProCms cms)
-            => SanitizeText(await SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true), maxLength: 8);
+            => SanitizeText(await SendAsync($"ZQS12{ToCommandCode(cms)}", expectResponse: true).ConfigureAwait(false), maxLength: 8);
 
         public Task SetCmsLabelAsync(RadianceProCms cms, string value)
             => SendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
         public async Task<string> GetStyleLabelAsync(RadianceProStyle style)
-            => SanitizeText(await SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true), maxLength: 8);
+            => SanitizeText(await SendAsync($"ZQS13{ToCommandCode(style)}", expectResponse: true).ConfigureAwait(false), maxLength: 8);
 
         public Task SetStyleLabelAsync(RadianceProStyle style, string value)
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
@@ -213,7 +213,7 @@ namespace RadiantPi.Lumagen {
 
         public async Task<string> SendAsync(string command, bool expectResponse) {
             var buffer = Encoding.UTF8.GetBytes(command);
-            await _mutex.WaitAsync();
+            await _mutex.WaitAsync().ConfigureAwait(false);
             try {
 
                 // send message, await echo response and optional response message
@@ -222,8 +222,8 @@ namespace RadiantPi.Lumagen {
                     try {
                         _responseReceivedEvent += ReadResponse;
                         Log($"sending: '{command}'");
-                        await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
-                        return await responseSource.Task;
+                        await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                        return await responseSource.Task.ConfigureAwait(false);
                     } finally {
                         _responseReceivedEvent -= ReadResponse;
                     }
@@ -243,7 +243,7 @@ namespace RadiantPi.Lumagen {
                         responseSource.SetResult(response);
                     }
                 } else {
-                    await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length);
+                    await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                     return null;
                 }
             } finally {
