@@ -22,6 +22,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen;
 using RadiantPi.Lumagen.Model;
 using RadiantPi.Model;
@@ -53,15 +54,15 @@ namespace RadiantPi {
             }
 
             public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options)
-                => throw new NotImplementedException();
+                => throw new NotSupportedException();
         }
 
         //--- Class Methods ---
-        public static RadianceProAutomation New(IRadiancePro client, RadianceProAutomationConfig config) {
-            var automation = new RadianceProAutomation(client, config);
+        public static RadianceProAutomation New(IRadiancePro client, RadianceProAutomationConfig config, ILogger logger) {
+            var automation = new RadianceProAutomation(client, config, logger);
 
             // subscribe to mode-changed events
-            if(config.ModeChangedRules != null) {
+            if(config.ModeChangedRules?.Any() ?? false) {
                 client.ModeInfoChanged += automation.OnModeInfoChanged;
             }
             return automation;
@@ -70,11 +71,13 @@ namespace RadiantPi {
         //--- Fields ---
         private IRadiancePro _client;
         private RadianceProAutomationConfig _config;
+        private ILogger _logger;
 
         //--- Constructors ---
-        private RadianceProAutomation(IRadiancePro client, RadianceProAutomationConfig config) {
+        private RadianceProAutomation(IRadiancePro client, RadianceProAutomationConfig config, ILogger logger) {
             _client = client ?? throw new System.ArgumentNullException(nameof(client));
             _config = ValidateConfig(config ?? throw new System.ArgumentNullException(nameof(config)));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         //--- Methods ---
@@ -117,11 +120,11 @@ namespace RadiantPi {
 
                     // check if condition field can be found
                     if(condition.Field == null) {
-                        Log($"{ruleName}, condition {conditionIndex} failed: missing 'Field' value");
+                        LogInformation($"{ruleName}, condition {conditionIndex} failed: missing 'Field' value");
                         return;
                     }
                     if(!modeChangedEvent.TryGetValue(condition.Field, out var value)) {
-                        Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}' not found in event");
+                        LogInformation($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}' not found in event");
                         return;
                     }
 
@@ -130,48 +133,48 @@ namespace RadiantPi {
                     case "Equal":
                     case null:
                         if(string.Compare(value, condition.Value, StringComparison.Ordinal) != 0) {
-                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not equal to '{condition.Value}'");
+                            LogInformation($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not equal to '{condition.Value}'");
                             return;
                         }
                         conditionsMatched.Add($"'{condition.Field}' == '{condition.Value}'");
                         break;
                     case "NotEqual":
                         if(string.Compare(value, condition.Value, StringComparison.Ordinal) == 0) {
-                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not equal to '{condition.Value}'");
+                            LogInformation($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not equal to '{condition.Value}'");
                             return;
                         }
                         conditionsMatched.Add($"'{condition.Field}' == '{condition.Value}'");
                         break;
                     case "LessThan":
                         if(string.Compare(value, condition.Value, StringComparison.Ordinal) >= 0) {
-                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not less than '{condition.Value}'");
+                            LogInformation($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not less than '{condition.Value}'");
                             return;
                         }
                         conditionsMatched.Add($"'{condition.Field}' < '{condition.Value}'");
                         break;
                     case "LessThanOrEqual":
                         if(string.Compare(value, condition.Value, StringComparison.Ordinal) > 0) {
-                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not less than or equal to '{condition.Value}'");
+                            LogInformation($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not less than or equal to '{condition.Value}'");
                             return;
                         }
                         conditionsMatched.Add($"'{condition.Field}' <= '{condition.Value}'");
                         break;
                     case "GreaterThan":
                         if(string.Compare(value, condition.Value, StringComparison.Ordinal) <= 0) {
-                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not greater than '{condition.Value}'");
+                            LogInformation($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not greater than '{condition.Value}'");
                             return;
                         }
                         conditionsMatched.Add($"'{condition.Field}' > '{condition.Value}'");
                         break;
                     case "GreaterThanOrEqual":
                         if(string.Compare(value, condition.Value, StringComparison.Ordinal) < 0) {
-                            Log($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not greater than or equal to '{condition.Value}'");
+                            LogInformation($"{ruleName}, condition {conditionIndex} failed: field '{condition.Field}'({value}) is not greater than or equal to '{condition.Value}'");
                             return;
                         }
                         conditionsMatched.Add($"'{condition.Field}' >= '{condition.Value}'");
                         break;
                     default:
-                        Log($"{ruleName}, condition {conditionIndex} failed: unrecognized operation '{condition.Operation ?? "<null>"}'");
+                        LogInformation($"{ruleName}, condition {conditionIndex} failed: unrecognized operation '{condition.Operation ?? "<null>"}'");
                         return;
                     }
                 }
@@ -181,36 +184,35 @@ namespace RadiantPi {
             if(rule.Actions != null) {
                 var actionIndex = 0;
                 if(conditionsMatched.Any()) {
-                    Log($"{ruleName} matched: {string.Join(", ", conditionsMatched)}");
+                    LogInformation($"{ruleName} matched: {string.Join(", ", conditionsMatched)}");
                 }
                 foreach(var action in rule.Actions) {
                     ++actionIndex;
                     if(action.Send == null) {
-                        Log($"{ruleName}, action {actionIndex} skipped: missing 'Send' value'");
+                        LogInformation($"{ruleName}, action {actionIndex} skipped: missing 'Send' value'");
                         continue;
                     }
                     switch(action.Target) {
                     case "RadiancePro":
                     case null:
-                        Log($"{ruleName}, action {actionIndex} sending command to 'RadiancePro': '{action.Send}'");
+                        LogInformation($"{ruleName}, action {actionIndex} sending command to 'RadiancePro': '{action.Send}'");
                         await _client.SendAsync(action.Send, expectResponse: false);
                         break;
                     default:
-                        Log($"{ruleName}, action {actionIndex} skipped: unrecognized target '{action.Target ?? "<null>"}'");
+                        LogInformation($"{ruleName}, action {actionIndex} skipped: unrecognized target '{action.Target ?? "<null>"}'");
                         return;
                     }
                 }
             } else {
-                Log($"{ruleName}: no actions");
+                LogInformation($"{ruleName}: no actions");
             }
         }
 
-            // TODO: make logging configurable
-        private void Log(string message) => Console.WriteLine($"{typeof(RadianceProAutomation).Name}  {message}");
+        private void LogInformation(string message) => _logger.LogInformation(message);
 
         //--- IDisposable Members ---
         void IDisposable.Dispose() {
-            if(_config.ModeChangedRules != null) {
+            if(_config.ModeChangedRules?.Any() ?? false) {
                 _client.ModeInfoChanged -= OnModeInfoChanged;
             }
         }

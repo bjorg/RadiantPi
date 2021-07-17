@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen;
 using RadiantPi.Model;
 
@@ -29,10 +30,17 @@ namespace RadiantPi {
     public class Startup {
 
         //--- Constructors ---
-        public Startup(IConfiguration configuration) => Configuration = configuration;
+        public Startup(IConfiguration configuration) {
+            Configuration = configuration;
+
+            // create startup logger
+            using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+            Logger = loggerFactory.CreateLogger<Startup>();
+        }
 
         //--- Properties ---
         public IConfiguration Configuration { get; }
+        public ILogger<Startup> Logger { get; }
 
         //--- Methods ---
         public void ConfigureServices(IServiceCollection services) {
@@ -42,34 +50,23 @@ namespace RadiantPi {
             services.AddRazorPages();
             services.AddServerSideBlazor();
 
-            // add RadiancePro client configuration
+            // add RadiancePro client
             services.AddSingleton<IRadiancePro>(_ => {
                 var radiancePro = Configuration.GetSection("RadiancePro");
                 var config = radiancePro.Get<RadianceProClientConfig>();
                 if((config == null) || (config.PortName == null) || config.Mock.GetValueOrDefault()) {
 
                     // default to mock configuration when no configuration is found
-                    LogWarn("using RadiancePro mock client configuration");
+                    Logger.LogWarning("using RadiancePro mock client configuration");
                     config = new RadianceProClientConfig {
                         Mock = true
                     };
                 }
-
-                // initialize client
-                var client = RadianceProClient.Initialize(config);
-
-                // initialize client automation
-                var automation = radiancePro.GetSection("Automation").Get<RadianceProAutomationConfig>();
-                if(automation != null) {
-                    RadianceProAutomation.New(client, automation);
-                }
-                return client;
+                return RadianceProClient.Initialize(config);
             });
 
-            // local functions
-
-            // TODO (12-31-2020, bjorg): would prefer to use ILogger, but it doesn't seem to be availble here
-            void LogWarn(string message) => System.Console.WriteLine("WARNING: " + message);
+            // add RadiancePro automation service
+            services.AddHostedService<RadianceProAutomationService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {

@@ -188,7 +188,7 @@ namespace RadiantPi.Lumagen {
         public Task SetStyleLabelAsync(RadianceProStyle style, string value)
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
-        // TODO:
+        // TODO: add commands
 
         // ZY0M<CR>
         //  Set zoom factor to M: Where M can be 0-2 (or 0-7 if zoom is set for 5% steps)
