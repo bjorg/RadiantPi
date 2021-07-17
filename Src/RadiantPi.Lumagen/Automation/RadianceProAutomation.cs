@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen.Automation.Internal;
@@ -34,6 +35,7 @@ namespace RadiantPi.Lumagen.Automation {
 
             //--- Properties ---
             public string Name { get; set; }
+            public string ConditionDefinition { get; set; }
             public ExpressionParser<ModeInfoDetails>.ExpressionDelegate Condition { get; set; }
             public IEnumerable<ModelChangedAction> Actions { get; set; }
         }
@@ -70,6 +72,7 @@ namespace RadiantPi.Lumagen.Automation {
                     try {
                         _rules.Add(ruleName, new() {
                             Name = ruleName,
+                            ConditionDefinition = ruleDefinition.Condition,
                             Condition = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, ruleDefinition.Condition),
                             Actions = ruleDefinition.Actions
                         });
@@ -87,17 +90,24 @@ namespace RadiantPi.Lumagen.Automation {
 
         //--- Methods ---
         public async void OnModeInfoChanged(object sender, ModeInfoDetails modeInfo) {
+            _logger.LogDebug("event received");
 
             // create environment by evaluating all variables
             var environment = new Dictionary<string, bool>();
             environment = _variables
                 .Select(variable => (Name: variable.Key, Value: variable.Value(modeInfo, environment)))
                 .ToDictionary(kv => kv.Name, kv => kv.Value);
+            var options = new JsonSerializerOptions {
+                WriteIndented = true
+            };
+            _logger.LogDebug($"environment: {JsonSerializer.Serialize(environment, options)}");
 
             // find first rule that matches
             foreach(var (ruleName, ruleDefinition) in _rules) {
                 try {
-                    if(ruleDefinition.Condition(modeInfo, environment)) {
+                    var eval = ruleDefinition.Condition(modeInfo, environment);
+                    _logger.LogDebug($"rule '{ruleName}': {ruleDefinition.ConditionDefinition} == > {eval}");
+                    if(eval) {
 
                         // apply all actions
                         _logger.LogInformation($"matched rule '{ruleName}'");
