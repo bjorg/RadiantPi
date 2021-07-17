@@ -56,18 +56,26 @@ namespace RadiantPi.Lumagen.Automation {
             // parse variable expressions
             if(variables?.Any() ?? false) {
                 foreach(var (variableName, variableDefinition) in variables) {
-                    _variables.Add(variableName, ExpressionParser<ModeInfoDetails>.ParseExpression(variableName, variableDefinition));
+                    try {
+                        _variables.Add(variableName, ExpressionParser<ModeInfoDetails>.ParseExpression(variableName, variableDefinition));
+                    } catch(Exception e) {
+                        _logger.LogError(e, $"error while adding variable '{variableName}'");
+                    }
                 }
             }
 
             // parse rules
             if(rules?.Any() ?? false) {
                 foreach(var (ruleName, ruleDefinition) in rules) {
-                    _rules.Add(ruleName, new() {
-                        Name = ruleName,
-                        Condition = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, ruleDefinition.Condition),
-                        Actions = ruleDefinition.Actions
-                    });
+                    try {
+                        _rules.Add(ruleName, new() {
+                            Name = ruleName,
+                            Condition = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, ruleDefinition.Condition),
+                            Actions = ruleDefinition.Actions
+                        });
+                    } catch(Exception e) {
+                        _logger.LogError(e, $"error while adding rule '{ruleName}'");
+                    }
                 }
             }
 
