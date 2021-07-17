@@ -26,6 +26,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen.Model;
 
 namespace RadiantPi.Lumagen {
@@ -42,10 +43,10 @@ namespace RadiantPi.Lumagen {
     public sealed class RadianceProClient : IRadiancePro {
 
         //--- Class Methods ---
-        public static IRadiancePro Initialize(RadianceProClientConfig config)
+        public static IRadiancePro Initialize(RadianceProClientConfig config, ILogger logger = null)
             => (config.Mock ?? false)
                 ? new RadianceProMockClient()
-                : new RadianceProClient(config.PortName, config.BaudRate ?? 9600) {
+                : new RadianceProClient(config.PortName, config.BaudRate ?? 9600, logger) {
                     Verbose = config.Verbose ?? false
                 };
 
@@ -121,16 +122,18 @@ namespace RadiantPi.Lumagen {
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
         private string _accumulator = "";
         private event EventHandler<string> _responseReceivedEvent;
+        private ILogger _logger;
 
         //--- Constructors ---
-        public RadianceProClient(SerialPort serialPort) {
+        public RadianceProClient(SerialPort serialPort, ILogger logger = null) {
+            _logger = logger;
             _responseReceivedEvent += DispatchEvents;
             _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
             _serialPort.DataReceived += SerialDataReceived;
             _serialPort.Open();
         }
 
-        public RadianceProClient(string portName, int baudRate = 9600) : this(new SerialPort {
+        public RadianceProClient(string portName, int baudRate = 9600, ILogger logger = null) : this(new SerialPort {
             PortName = portName,
             BaudRate = baudRate,
             DataBits = 8,
@@ -151,12 +154,14 @@ namespace RadiantPi.Lumagen {
             if(data.Length < 4) {
                 throw new InvalidDataException("invalid response");
             }
-            return LogResponse(new GetDeviceInfoResponse {
+            var getDeviceInfoResponse = new GetDeviceInfoResponse {
                 ModelName = data[0],
                 SoftwareRevision = data[1],
                 ModelNumber = data[2],
                 SerialNumber = data[3]
-            });
+            };
+            LogResponse(getDeviceInfoResponse);
+            return getDeviceInfoResponse;
         }
 
         public async Task<GetModeInfoResponse> GetModeInfoAsync() {
@@ -200,7 +205,7 @@ namespace RadiantPi.Lumagen {
         //  Output shrink: Returns (top,left,bottom,right) 000-255 pixels (decimal)
 
         public void Dispose() {
-            Log("Dispose");
+            LogInformation("Dispose");
             _serialPort.DataReceived -= SerialDataReceived;
             _mutex.Dispose();
             if(_serialPort.IsOpen) {
@@ -221,7 +226,7 @@ namespace RadiantPi.Lumagen {
                     TaskCompletionSource<string> responseSource = new();
                     try {
                         _responseReceivedEvent += ReadResponse;
-                        Log($"sending: '{command}'");
+                        LogInformationEscaped($"sending: '{command}'");
                         await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                         return await responseSource.Task.ConfigureAwait(false);
                     } finally {
@@ -253,7 +258,7 @@ namespace RadiantPi.Lumagen {
 
         private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
             var received = _serialPort.ReadExisting();
-            Log($"received: '{string.Join("", received.Select(EscapeChar))}'");
+            LogInformationEscaped($"received: '{string.Join("", received.Select(EscapeChar))}'");
 
             // loop while there is text to process
             while(received.Length > 0) {
@@ -283,7 +288,7 @@ namespace RadiantPi.Lumagen {
 
                     // process response
                     var message = _accumulator.Substring(0, index);
-                    Log($"dispatching: '{message}'");
+                    LogInformationEscaped($"dispatching: '{message}'");
                     _responseReceivedEvent?.Invoke(this, message);
 
                     // process remainder of accumulator as newly received text
@@ -314,7 +319,7 @@ namespace RadiantPi.Lumagen {
             ) {
                 var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length));
                 if(modeInfoResponse != null) {
-                    Log("event: GetModeInfoResponse");
+                    LogInformation("event: GetModeInfoResponse");
                     ModeInfoChanged?.Invoke(this, modeInfoResponse);
                 }
             }
@@ -431,10 +436,11 @@ namespace RadiantPi.Lumagen {
             default:
                 throw new InvalidDataException("invalid GetModeInfoResponse");
             }
-            return LogResponse(info);
+            LogResponse(info);
+            return info;
         }
 
-        private void Log(string message) {
+        private void LogInformationEscaped(string message) {
             if(Verbose) {
                 var escapedMessage = string.Join("", message.Select(c => c switch {
                     >= (char)32 and < (char)127 => ((char)c).ToString(),
@@ -442,13 +448,11 @@ namespace RadiantPi.Lumagen {
                     '\r' => "\\r",
                     _ => $"\\u{(int)c:X4}"
                 }));
-
-                // TODO: make configurable
-                Console.WriteLine($"{typeof(RadianceProClient).Name} {escapedMessage}");
+                LogInformation($"{escapedMessage}");
             }
         }
 
-        private T LogResponse<T>(T response) {
+        private void LogResponse(object response) {
             if(Verbose) {
                 var serializedResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions {
                     WriteIndented = true,
@@ -456,11 +460,10 @@ namespace RadiantPi.Lumagen {
                         new JsonStringEnumConverter()
                     }
                 });
-
-                // TODO: make configurable
-                Console.WriteLine($"{typeof(RadianceProClient).Name} response: {serializedResponse}");
+                LogInformation($"response: {serializedResponse}");
             }
-            return response;
         }
+
+        private void LogInformation(string message) => _logger?.LogInformation(message);
     }
 }

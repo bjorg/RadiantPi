@@ -23,7 +23,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen;
-using RadiantPi.Model;
 
 namespace RadiantPi {
 
@@ -35,12 +34,12 @@ namespace RadiantPi {
 
             // create startup logger
             using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            Logger = loggerFactory.CreateLogger<Startup>();
+            ConsoleLogger = loggerFactory.CreateLogger<Startup>();
         }
 
         //--- Properties ---
         public IConfiguration Configuration { get; }
-        public ILogger<Startup> Logger { get; }
+        public ILogger<Startup> ConsoleLogger { get; }
 
         //--- Methods ---
         public void ConfigureServices(IServiceCollection services) {
@@ -51,18 +50,19 @@ namespace RadiantPi {
             services.AddServerSideBlazor();
 
             // add RadiancePro client
-            services.AddSingleton<IRadiancePro>(_ => {
+            services.AddSingleton<IRadiancePro>(services => {
                 var radiancePro = Configuration.GetSection("RadiancePro");
                 var config = radiancePro.Get<RadianceProClientConfig>();
                 if((config == null) || (config.PortName == null) || config.Mock.GetValueOrDefault()) {
 
                     // default to mock configuration when no configuration is found
-                    Logger.LogWarning("using RadiancePro mock client configuration");
+                    ConsoleLogger.LogWarning("using RadiancePro mock client configuration");
                     config = new RadianceProClientConfig {
                         Mock = true
                     };
                 }
-                return RadianceProClient.Initialize(config);
+                var clientLogger = services.GetService<ILoggerFactory>().CreateLogger<RadianceProClient>();
+                return RadianceProClient.Initialize(config, clientLogger);
             });
 
             // add RadiancePro automation service
