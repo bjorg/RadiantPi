@@ -81,7 +81,7 @@ namespace RadiantPi {
         }
 
         //--- Methods ---
-        public async void OnModeInfoChanged(object sender, GetModeInfoResponse modeInfo) {
+        public async void OnModeInfoChanged(object sender, ModeInfoDetails modeInfo) {
 
             // convert event details into a dictionary
             var modeChangedEvent = JsonSerializer.Deserialize<Dictionary<string, string>>(

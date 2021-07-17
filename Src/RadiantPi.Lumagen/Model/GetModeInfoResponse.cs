@@ -18,32 +18,33 @@
 
 namespace RadiantPi.Lumagen.Model {
 
-    public sealed class GetModeInfoResponse {
+    public class ModeInfoDetails {
 
         // Radiance Pro only(release 041120 and later).
-        // Full information query(“Fullv3” for unsolicited status output):
+        // Full information query(“Fullv4” for unsolicited status output):
         // Response= "!I23,M,RRR,VVVV,D,X,AAA,SSS,Y,T,WWWW,C,B,PPP,QQQQ,ZZZ,E,F,G,H,II,KK":
-        // 00: M= Input status (0=no source, 1=active video, 2=internal pattern)
-        // 01: RRR= Source vertical rate (e.g.059for 59.94, 060 for 60.00)
-        // 02: VVVV= Source vertical resolution (e.g. 1080 for 1080p)
-        // 03: D= Source 3D mode (0,1,2,4,8)
-        // 04: X= Active input config number for current input resolution
-        // 05: AAA= Source raster aspect(e.g. 178 for HD or UHD)
-        // 06: SSS= Source content aspect (e.g. 240 for 2.40)
-        // 07: Y= NLS active (‘-‘ for normal, 'N' for NLS)
-        // 08: T= 3D output mode (0,1,2,4,8)
-        // 09: WWWW= Output on. 16 bit hex, b0 to 15 for out 1 to 16. Bit=1 if on
-        // 10: C= Active Output CMS (0 to 7)
-        // 11: B= Active Output Style (0 to 7)
-        // 12: PPP= Output vertical rate, (e.g.059 for 59.94, 060 for 60.00)
-        // 13: QQQQ= Output vertical resolution (e.g. 1080 for 1080p)
-        // 14: ZZZ= Output aspect (e.g. 178 for 16:9)
-        // 15: E= Output Colorspace (0,1,2,3 for 601, 709, 2020, 2100 respectively)
-        // 16: F=Source dynamic range (0 = SDR, 1= HDR)
-        // 17: G= Source Mode ("i" = interlaced, "p"= progressive, "-" = no Input)
-        // 18: H= Output Mode. ("I" = interlaced, "P" = progressive)
-        // 19: II= VirtualInput selected by remote/RS232 command (1 to 19)
-        // 20: KK= Physical Input selectedfor current virtual input (1 to 19)
+        // 00: M = Input status (0=no source, 1=active video, 2=internal pattern)
+        // 01: RRR = Source vertical rate (e.g.059for 59.94, 060 for 60.00)
+        // 02: VVVV = Source vertical resolution (e.g. 1080 for 1080p)
+        // 03: D = Source 3D mode (0,1,2,4,8)
+        // 04: X = Active input config number for current input resolution
+        // 05: AAA = Source raster aspect(e.g. 178 for HD or UHD)
+        // 06: SSS = Source content aspect (e.g. 240 for 2.40)
+        // 07: Y = NLS active (‘-‘ for normal, 'N' for NLS)
+        // 08: T = 3D output mode (0,1,2,4,8)
+        // 09: WWWW = Output on. 16 bit hex, b0 to 15 for out 1 to 16. Bit=1 if on
+        // 10: C = Active Output CMS (0 to 7)
+        // 11: B = Active Output Style (0 to 7)
+        // 12: PPP = Output vertical rate, (e.g.059 for 59.94, 060 for 60.00)
+        // 13: QQQQ = Output vertical resolution (e.g. 1080 for 1080p)
+        // 14: ZZZ = Output aspect (e.g. 178 for 16:9)
+        // 15: E = Output Colorspace (0,1,2,3 for 601, 709, 2020, 2100 respectively)
+        // 16: F = Source dynamic range (0 = SDR, 1= HDR)
+        // 17: G = Source Mode ("i" = interlaced, "p"= progressive, "-" = no Input)
+        // 18: H = Output Mode. ("I" = interlaced, "P" = progressive)
+        // 19: II = VirtualInput selected by remote/RS232 command (1 to 19)
+        // 20: KK = Physical Input selectedfor current virtual input (1 to 19)
+        // 20: JJJ = Detected input aspect, .ie 240 for 2.40
 
         //--- Properties ---
         public RadianceProInputStatus InputStatus { get; set; }
@@ -76,4 +77,6 @@ namespace RadiantPi.Lumagen.Model {
         public RadianceProColorSpace OutputColorSpace { get; set; }
         public string InputAspectRatio { get; set; }
     }
+
+    public sealed class GetModeInfoResponse : ModeInfoDetails { }
 }

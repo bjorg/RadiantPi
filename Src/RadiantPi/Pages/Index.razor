@@ -109,7 +109,7 @@
     private string OutputCmsLabel { get; set; }
     private string OutputStyleLabel { get; set; }
     private GetDeviceInfoResponse DeviceInfo { get; set; }
-    private GetModeInfoResponse ModeInfo { get; set; }
+    private ModeInfoDetails ModeInfo { get; set; }
 
     //--- Methods ---
     protected override async Task OnInitializedAsync() {
@@ -168,7 +168,7 @@
             _ => refreshRate
         };
 
-    private void OnModeInfoChanged(object sender, GetModeInfoResponse response) =>
+    private void OnModeInfoChanged(object sender, ModeInfoDetails response) =>
         InvokeAsync(async () => {
 
             // TODO: remove this code
