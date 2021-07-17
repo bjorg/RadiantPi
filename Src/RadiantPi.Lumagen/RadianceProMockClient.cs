@@ -98,7 +98,7 @@ namespace RadiantPi.Lumagen {
         };
 
         //--- Events ---
-        public event EventHandler<GetModeInfoResponse> ModeInfoChanged;
+        public event EventHandler<ModeInfoDetails> ModeInfoChanged;
 
         //--- Methods ---
         public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync()
@@ -131,7 +131,8 @@ namespace RadiantPi.Lumagen {
                 SourceVideoMode = RadianceProVideoMode.Progressive,
                 OutputVideoMode = RadianceProVideoMode.Progressive,
                 VirtualInputSelected = 1,
-                PhysicalInputSelected = 1
+                PhysicalInputSelected = 1,
+                InputAspectRatio = "178"
             };
 
         public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input) {

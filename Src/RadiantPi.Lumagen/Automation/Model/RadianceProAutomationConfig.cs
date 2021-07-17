@@ -18,31 +18,23 @@
 
 using System.Collections.Generic;
 
-namespace RadiantPi.Model {
+namespace RadiantPi.Lumagen.Automation.Model {
 
-    public class RadianceProAutomationConfig {
+    public sealed class AutomationConfig {
 
         //--- Properties ---
-        public List<ModeChangedRule> ModeChangedRules { get; set; }
+        public Dictionary<string, string> Variables { get; set; } = new();
+        public Dictionary<string, ModeChangedRule> Rules { get; set; } = new();
     }
 
-    public class ModeChangedRule {
+    public sealed class ModeChangedRule {
 
         //--- Properties ---
-        public string Name { get; set; }
-        public List<ModelChangedCondition> Conditions { get; set; }
+        public string Condition { get; set; }
         public List<ModelChangedAction> Actions { get; set; }
     }
 
-    public class ModelChangedCondition {
-
-        //--- Properties ---
-        public string Field { get; set; }
-        public string Operation { get; set; }
-        public string Value { get; set; }
-    }
-
-    public class ModelChangedAction {
+    public sealed class ModelChangedAction {
 
         //--- Properties ---
         public string Target { get; set; }
