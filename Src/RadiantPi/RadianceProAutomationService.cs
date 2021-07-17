@@ -54,6 +54,10 @@ namespace RadiantPi {
             if(automationConfig != null) {
                 using var automation = new RadianceProAutomation(_client, automationConfig, _logger);
 
+                // initiate client events
+                _logger.LogInformation("get current video mode");
+                await _client.GetModeInfoAsync();
+
                 // wait until  we're requested to stop
                 cancellationToken.Register(() => _logger.LogInformation("received stop signal"));
                 await cancellationToken;
