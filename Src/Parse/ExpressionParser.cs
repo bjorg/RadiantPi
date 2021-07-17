@@ -7,18 +7,10 @@ using Sprache;
 
 namespace SampleParser {
 
-    public class SampleRecord {
-
-        //--- Properties ---
-        public bool BoolValue { get; set; }
-        public string StringValue { get; set; }
-    }
-
-    public static class ExpressionParser {
+    public static class ExpressionParser<TRecord> {
 
         //--- Class Fields ---
-        private static Type ParameterType = typeof(SampleRecord);
-
+        private static Type RecordType = typeof(TRecord);
         private static readonly Parser<ExpressionType> And = Operator("&&", ExpressionType.AndAlso);
         private static readonly Parser<ExpressionType> Equal = Operator("=", ExpressionType.Equal);
         private static readonly Parser<ExpressionType> GreaterThan = Operator(">", ExpressionType.GreaterThanOrEqual);
@@ -47,9 +39,14 @@ namespace SampleParser {
             from _2 in Parse.Char('\'')
             select Expression.Constant(value);
 
-        private static readonly Parser<Expression> VariableReference =
+        private static readonly Parser<Expression> RecordVariableReference =
             from name in Parse.Letter.AtLeastOnce().Text()
-            select MakeVariableReference(name);
+            select MakeRecordVariableReference(name);
+
+        private static readonly Parser<Expression> EnvironmentVariableReference =
+            from _ in Parse.Char('$')
+            from name in Parse.Letter.AtLeastOnce().Text()
+            select MakeEnvironmentVariableReference(name);
 
         private static readonly Parser<Expression> BoolTrueLiteral =
             from _ in Parse.String("true")
@@ -69,7 +66,8 @@ namespace SampleParser {
                 .XOr(StringLiteral)
                 .XOr(BoolTrueLiteral)
                 .XOr(BoolFalseLiteral)
-                .XOr(VariableReference);
+                .XOr(EnvironmentVariableReference)
+                .XOr(RecordVariableReference);
 
         private static readonly Parser<Expression> Operand =
             (
@@ -94,15 +92,21 @@ namespace SampleParser {
             from body in Expr.End()
             select body;
 
-        private static readonly ParameterExpression LambdaParameter = Expression.Parameter(typeof(SampleRecord), "record");
+        private static readonly ParameterExpression LambdaRecordParameter = Expression.Parameter(typeof(TRecord), "record");
+        private static readonly ParameterExpression LambdaEnvironmentParameter = Expression.Parameter(typeof(Dictionary<string, bool>), "env");
         private static readonly MethodInfo StringCompareMethod = typeof(string).GetMethod("Compare", new[] { typeof(string), typeof(string), typeof(StringComparison) });
+        private static readonly MethodInfo DictionaryGetItemMethod = typeof(Dictionary<string, bool>).GetMethod("get_Item", new[] { typeof(string) });
 
         //--- Class Methods ---
-        public static LambdaExpression ParseExpression(string name, string text)
-            => Expression.Lambda<Func<SampleRecord, bool>>(Body.Parse(text), name, new[] { LambdaParameter });
+        public static Func<TRecord, Dictionary<string, bool>, bool> ParseExpression(string name, string text)
+            => (Func<TRecord, Dictionary<string, bool>, bool>)Expression.Lambda<Func<TRecord, Dictionary<string, bool>, bool>>(Body.Parse(text), name, new[] { LambdaRecordParameter, LambdaEnvironmentParameter }).Compile();
 
         private static Parser<ExpressionType> Operator(string op, ExpressionType opType) => Parse.String(op).Token().Return(opType);
-        private static Expression MakeVariableReference(string name) => Expression.Property(LambdaParameter, ParameterType.GetProperty(name));
+        private static Expression MakeRecordVariableReference(string name)
+            => Expression.Property(LambdaRecordParameter, RecordType.GetProperty(name) ?? throw new NotSupportedException($"record property '{name}' does not exist"));
+
+        private static Expression MakeEnvironmentVariableReference(string name)
+            => Expression.Call(LambdaEnvironmentParameter, DictionaryGetItemMethod, new[] { Expression.Constant(name) });
 
         private static Parser<U> EnumerateInput<T, U>(T[] input, Func<T, Parser<U>> parser) {
             if((input == null) || (input.Length == 0)) throw new ArgumentNullException("input");
