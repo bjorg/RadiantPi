@@ -436,7 +436,7 @@ namespace RadiantPi.Lumagen {
                 info.OutputAspectRatio = data[14];
                 break;
             default:
-                throw new InvalidDataException("invalid GetModeInfoResponse");
+                throw new InvalidDataException($"invalid GetModeInfoResponse ({data.Length} columns)");
             }
             LogResponse(info);
             return info;
