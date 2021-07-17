@@ -12,24 +12,27 @@ namespace SampleParser {
         //--- Class Fields ---
         private static Type RecordType = typeof(TRecord);
         private static readonly Parser<ExpressionType> And = Operator("&&", ExpressionType.AndAlso);
-        private static readonly Parser<ExpressionType> Equal = Operator("=", ExpressionType.Equal);
+        private static readonly Parser<ExpressionType> Equal = Operator("==", ExpressionType.Equal);
         private static readonly Parser<ExpressionType> GreaterThan = Operator(">", ExpressionType.GreaterThanOrEqual);
         private static readonly Parser<ExpressionType> GreaterThanOrEqual = Operator(">=", ExpressionType.GreaterThan);
         private static readonly Parser<ExpressionType> LessThan = Operator("<", ExpressionType.LessThan);
         private static readonly Parser<ExpressionType> LessThanOrEqual = Operator("<=", ExpressionType.LessThanOrEqual);
         private static readonly Parser<ExpressionType> NotEqual = Operator("!=", ExpressionType.NotEqual);
         private static readonly Parser<ExpressionType> Or = Operator("||", ExpressionType.OrElse);
-        private static readonly List<char> EscapeChars = new List<char> { '\"', '\\', 'b', 'f', 'n', 'r', 't' };
+        private static readonly char[] EscapeChars = new[] { '\"', '\\', 'b', 'f', 'n', 'r', 't' };
 
         private static readonly Parser<char> StringControlChar =
-            from first in Parse.Char('\\')
-            from next in EnumerateInput(EscapeChars.ToArray(), c => Parse.Char(c))
-            select ((next == 't') ? '\t' :
-                    (next == 'r') ? '\r' :
-                    (next == 'n') ? '\n' :
-                    (next == 'f') ? '\f' :
-                    (next == 'b') ? '\b' :
-                    next);
+            from _ in Parse.Char('\\')
+            from control in EnumerateInput(EscapeChars, c => Parse.Char(c))
+            select control switch {
+                't' => '\t',
+                'r' => '\r',
+                'n' => '\n',
+                'f' => '\f',
+                'b' => '\b',
+                _ => control
+            };
+
         private static readonly Parser<char> StringChar =
             Parse.AnyChar.Except(Parse.Char('\'').Or(Parse.Char('\\'))).Or(StringControlChar);
 
@@ -96,29 +99,29 @@ namespace SampleParser {
         private static readonly ParameterExpression LambdaEnvironmentParameter = Expression.Parameter(typeof(Dictionary<string, bool>), "env");
         private static readonly MethodInfo StringCompareMethod = typeof(string).GetMethod("Compare", new[] { typeof(string), typeof(string), typeof(StringComparison) });
         private static readonly MethodInfo DictionaryGetItemMethod = typeof(Dictionary<string, bool>).GetMethod("get_Item", new[] { typeof(string) });
+        private static readonly MethodInfo ObjectToStringMethod = typeof(object).GetMethod("ToString");
 
         //--- Class Methods ---
         public static Func<TRecord, Dictionary<string, bool>, bool> ParseExpression(string name, string text)
             => (Func<TRecord, Dictionary<string, bool>, bool>)Expression.Lambda<Func<TRecord, Dictionary<string, bool>, bool>>(Body.Parse(text), name, new[] { LambdaRecordParameter, LambdaEnvironmentParameter }).Compile();
 
         private static Parser<ExpressionType> Operator(string op, ExpressionType opType) => Parse.String(op).Token().Return(opType);
-        private static Expression MakeRecordVariableReference(string name)
-            => Expression.Property(LambdaRecordParameter, RecordType.GetProperty(name) ?? throw new NotSupportedException($"record property '{name}' does not exist"));
+        private static Expression MakeRecordVariableReference(string name) {
+
+            // TODO: better exception
+            var property = RecordType.GetProperty(name) ?? throw new NotSupportedException($"record property '{name}' does not exist");
+            Expression result = Expression.Property(LambdaRecordParameter, property);
+            if(property.PropertyType.IsEnum) {
+                result = Expression.Call(result, ObjectToStringMethod);
+            }
+            return result;
+        }
 
         private static Expression MakeEnvironmentVariableReference(string name)
             => Expression.Call(LambdaEnvironmentParameter, DictionaryGetItemMethod, new[] { Expression.Constant(name) });
 
-        private static Parser<U> EnumerateInput<T, U>(T[] input, Func<T, Parser<U>> parser) {
-            if((input == null) || (input.Length == 0)) throw new ArgumentNullException("input");
-            if(parser == null) throw new ArgumentNullException("parser");
-            return i => {
-                foreach(var inp in input) {
-                    var res = parser(inp)(i);
-                    if(res.WasSuccessful) return res;
-                }
-                return Result.Failure<U>(null, null, null);
-            };
-        }
+        private static Parser<U> EnumerateInput<T, U>(T[] inputs, Func<T, Parser<U>> parser)
+            => i => inputs.Select(input => parser(input)(i)).FirstOrDefault(result => result.WasSuccessful) ?? Result.Failure<U>(null, null, null);
 
         private static Expression MakeBinary(ExpressionType binaryOp, Expression left, Expression right) {
 

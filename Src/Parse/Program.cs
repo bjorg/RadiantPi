@@ -6,7 +6,8 @@ using SampleParser;
 
 SampleRecord record = new() {
     BoolValue = false,
-    StringValue = "abc"
+    StringValue = "abc",
+    EnumValue = EnumValues.Second
 };
 
 var env = new Dictionary<string, bool> {
@@ -16,6 +17,7 @@ var env = new Dictionary<string, bool> {
 Print("F1", "BoolValue");
 Print("F2", "StringValue < 'xyz' && true");
 Print("F2", "StringValue < 'xyz' && !$IsGameInput");
+Print("F2", "EnumValue == 'Second'");
 
 
 void Print(string name, string expression) {
