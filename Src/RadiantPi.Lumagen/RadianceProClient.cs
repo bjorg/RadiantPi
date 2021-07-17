@@ -160,9 +160,7 @@ namespace RadiantPi.Lumagen {
         }
 
         public async Task<GetModeInfoResponse> GetModeInfoAsync() {
-
-            // NOTE (2021-05-01, bjorg): ZQI23 keeps locking up the RadiancePro, using ZQI22 instead
-            var response = await SendAsync("ZQI22", expectResponse: true);
+            var response = await SendAsync("ZQI24", expectResponse: true);
             return ParseModeInfoResponse(response);
         }
 

@@ -60,7 +60,7 @@ ReceiveData(port, buffer => {
 try {
 
     // send data to initiate communication
-    await WriteAsync(port, "ZQI22");
+    await WriteAsync(port, "ZQI24");
 
     // listen on port until closed or user exits
     while(port.IsOpen) {
