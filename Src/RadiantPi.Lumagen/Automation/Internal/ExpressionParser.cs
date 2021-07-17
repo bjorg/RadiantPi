@@ -62,6 +62,10 @@ namespace RadiantPi.Lumagen.Automation.Internal {
             from _ in Parse.String("false")
             select Expression.Constant(false);
 
+        private static readonly Parser<Expression> IntLiteral =
+            from value in Parse.Digit.AtLeastOnce().Text()
+            select Expression.Constant(int.Parse(value));
+
         private static readonly Parser<Expression> Factor =
             (
                 from _1 in Parse.Char('(')
@@ -69,6 +73,7 @@ namespace RadiantPi.Lumagen.Automation.Internal {
                 from _2 in Parse.Char(')')
                 select expr
             ).Named("expression")
+                .XOr(IntLiteral)
                 .XOr(StringLiteral)
                 .XOr(BoolTrueLiteral)
                 .XOr(BoolFalseLiteral)
