@@ -52,7 +52,7 @@ namespace RadiantPi.Lumagen.Automation.Internal {
         private static readonly Parser<Expression> EnvironmentVariableReference =
             from _ in Parse.Char('$')
             from name in Parse.Letter.AtLeastOnce().Text()
-            select MakeEnvironmentVariableReference(name);
+            select MakeEnvironmentVariableReference("$" + name);
 
         private static readonly Parser<Expression> BoolTrueLiteral =
             from _ in Parse.String("true")
