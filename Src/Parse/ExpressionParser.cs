@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Sprache;
 
 namespace SampleParser {
@@ -81,19 +82,20 @@ namespace SampleParser {
             ).Token();
 
         private static readonly Parser<Expression> Comparison =
-            Parse.ChainOperator(LessThanOrEqual.Or(LessThan).Or(GreaterThanOrEqual).Or(GreaterThan).Or(Equal).Or(NotEqual), Operand, Expression.MakeBinary);
+            Parse.ChainOperator(LessThanOrEqual.Or(LessThan).Or(GreaterThanOrEqual).Or(GreaterThan).Or(Equal).Or(NotEqual), Operand, MakeBinary);
 
         private static readonly Parser<Expression> Term =
-            Parse.ChainOperator(And, Comparison, Expression.MakeBinary);
+            Parse.ChainOperator(And, Comparison, MakeBinary);
 
         private static readonly Parser<Expression> Expr =
-            Parse.ChainOperator(Or, Term, Expression.MakeBinary);
+            Parse.ChainOperator(Or, Term, MakeBinary);
 
         private static readonly Parser<Expression> Body =
             from body in Expr.End()
             select body;
 
         private static readonly ParameterExpression LambdaParameter = Expression.Parameter(typeof(SampleRecord), "record");
+        private static readonly MethodInfo StringCompareMethod = typeof(string).GetMethod("Compare", new[] { typeof(string), typeof(string), typeof(StringComparison) });
 
         //--- Class Methods ---
         public static LambdaExpression ParseExpression(string name, string text)
@@ -112,6 +114,28 @@ namespace SampleParser {
                 }
                 return Result.Failure<U>(null, null, null);
             };
+        }
+
+        private static Expression MakeBinary(ExpressionType binaryOp, Expression left, Expression right) {
+
+            // convert comparison of strings to:
+            //  string.Compare(left, right, StringComparison.Ordinal) <|<=|=|!=|>=|> 0
+            if((left.Type == typeof(string)) && (right.Type == typeof(string))) {
+                switch(binaryOp) {
+                case ExpressionType.LessThan:
+                case ExpressionType.LessThanOrEqual:
+                case ExpressionType.GreaterThan:
+                case ExpressionType.GreaterThanOrEqual:
+                case ExpressionType.Equal:
+                case ExpressionType.NotEqual:
+                    return Expression.MakeBinary(
+                        binaryOp,
+                        Expression.Call(null, StringCompareMethod, left, right, Expression.Constant(StringComparison.Ordinal)),
+                        Expression.Constant(0)
+                    );
+                }
+            }
+            return Expression.MakeBinary(binaryOp, left, right);
         }
     }
 }
