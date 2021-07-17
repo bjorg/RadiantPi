@@ -23,7 +23,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Internal;
 using RadiantPi.Lumagen;
-using RadiantPi.Model;
+using RadiantPi.Lumagen.Automation;
+using RadiantPi.Lumagen.Automation.Model;
 
 namespace RadiantPi {
 
@@ -49,9 +50,9 @@ namespace RadiantPi {
             var automationConfig = _configuration
                 .GetSection("RadiancePro")
                 .GetSection("Automation")
-                .Get<RadianceProAutomationConfig>();
+                .Get<AutomationConfig>();
             if(automationConfig != null) {
-                using var automation = RadianceProAutomation.New(_client, automationConfig, _logger);
+                using var automation = new RadianceProAutomation(_client, automationConfig, _logger);
 
                 // wait until  we're requested to stop
                 cancellationToken.Register(() => _logger.LogInformation("received stop signal"));
