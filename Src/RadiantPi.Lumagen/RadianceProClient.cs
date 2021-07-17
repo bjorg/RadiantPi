@@ -142,7 +142,7 @@ namespace RadiantPi.Lumagen {
             Handshake = Handshake.None,
             ReadTimeout = 1_000,
             WriteTimeout = 1_000
-        }) { }
+        }, logger) { }
 
         //--- Properties ---
         public bool Verbose { get; set; }
@@ -312,10 +312,12 @@ namespace RadiantPi.Lumagen {
             const string MODE_INFO_RESPONSE_V1 = "!I21,";
             const string MODE_INFO_RESPONSE_V2 = "!I22,";
             const string MODE_INFO_RESPONSE_V3 = "!I23,";
+            const string MODE_INFO_RESPONSE_V4 = "!I24,";
             if(
                 response.StartsWith(MODE_INFO_RESPONSE_V1, StringComparison.Ordinal)
                 || response.StartsWith(MODE_INFO_RESPONSE_V2, StringComparison.Ordinal)
                 || response.StartsWith(MODE_INFO_RESPONSE_V3, StringComparison.Ordinal)
+                || response.StartsWith(MODE_INFO_RESPONSE_V4, StringComparison.Ordinal)
             ) {
                 var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length));
                 if(modeInfoResponse != null) {
