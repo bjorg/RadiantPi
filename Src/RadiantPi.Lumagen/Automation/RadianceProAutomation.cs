@@ -59,7 +59,9 @@ namespace RadiantPi.Lumagen.Automation {
             if(variables?.Any() ?? false) {
                 foreach(var (variableName, variableDefinition) in variables) {
                     try {
-                        _variables.Add(variableName, ExpressionParser<ModeInfoDetails>.ParseExpression(variableName, variableDefinition));
+                        var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(variableName, variableDefinition);
+                        _logger.LogDebug($"compiled '{variableName}' => {expression}");
+                        _variables.Add(variableName, (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile());
                     } catch(Exception e) {
                         _logger.LogError(e, $"error while adding variable '{variableName}'");
                     }
@@ -73,10 +75,12 @@ namespace RadiantPi.Lumagen.Automation {
                     ++ruleIndex;
                     var ruleName = rule.Name ?? $"Rule #{ruleIndex}";
                     try {
+                        var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, rule.Condition);
+                        _logger.LogDebug($"compiled '{rule.Condition}' => {expression}");
                         _rules.Add(new() {
                             Name = ruleName,
                             ConditionDefinition = rule.Condition,
-                            Condition = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, rule.Condition),
+                            Condition = (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile(),
                             Actions = rule.Actions
                         });
                     } catch(Exception e) {

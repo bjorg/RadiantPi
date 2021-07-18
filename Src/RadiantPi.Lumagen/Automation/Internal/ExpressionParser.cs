@@ -114,12 +114,8 @@ namespace RadiantPi.Lumagen.Automation.Internal {
         private static readonly MethodInfo ObjectToStringMethod = typeof(object).GetMethod("ToString");
 
         //--- Class Methods ---
-        public static ExpressionDelegate ParseExpression(string name, string text) {
-            var body = Body.Parse(text);
-// TODO: make configurable
-//Console.WriteLine($"Compiled '{name}': {body}");
-            return (ExpressionDelegate)Expression.Lambda<ExpressionDelegate>(body, name, new[] { LambdaRecordParameter, LambdaEnvironmentParameter }).Compile();
-        }
+        public static Expression<ExpressionDelegate> ParseExpression(string name, string text)
+            => Expression.Lambda<ExpressionDelegate>(Body.Parse(text), name, new[] { LambdaRecordParameter, LambdaEnvironmentParameter });
 
         private static Parser<ExpressionType> Operator(string op, ExpressionType opType) => Parse.String(op).Token().Return(opType);
         private static Expression MakeRecordVariableReference(string name) {
