@@ -16,6 +16,9 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+// disable warning CS0067: The event 'RadianceProMockClient.ModeInfoChanged' is never used
+#pragma warning disable CS0067
+
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
