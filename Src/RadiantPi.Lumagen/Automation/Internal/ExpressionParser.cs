@@ -7,6 +7,10 @@ using Sprache;
 
 namespace RadiantPi.Lumagen.Automation.Internal {
 
+    // TODO: recognize 'string' value in boolean by comparing to null
+    //  * foo && foo > 100
+    //  * !foo || foo == 'bar'
+
     public static class ExpressionParser<TRecord> {
 
         //--- Types ---
@@ -17,7 +21,7 @@ namespace RadiantPi.Lumagen.Automation.Internal {
         private static readonly Parser<ExpressionType> And = Operator("&&", ExpressionType.AndAlso);
         private static readonly Parser<ExpressionType> Equal = Operator("==", ExpressionType.Equal);
         private static readonly Parser<ExpressionType> GreaterThan = Operator(">", ExpressionType.GreaterThanOrEqual);
-        private static readonly Parser<ExpressionType> GreaterThanOrEqual = Operator(">=", ExpressionType.GreaterThan);
+        private static readonly Parser<ExpressionType> GreaterThanOrEqual = Operator(">=", ExpressionType.GreaterThanOrEqual);
         private static readonly Parser<ExpressionType> LessThan = Operator("<", ExpressionType.LessThan);
         private static readonly Parser<ExpressionType> LessThanOrEqual = Operator("<=", ExpressionType.LessThanOrEqual);
         private static readonly Parser<ExpressionType> NotEqual = Operator("!=", ExpressionType.NotEqual);
@@ -110,8 +114,12 @@ namespace RadiantPi.Lumagen.Automation.Internal {
         private static readonly MethodInfo ObjectToStringMethod = typeof(object).GetMethod("ToString");
 
         //--- Class Methods ---
-        public static ExpressionDelegate ParseExpression(string name, string text)
-            => (ExpressionDelegate)Expression.Lambda<ExpressionDelegate>(Body.Parse(text), name, new[] { LambdaRecordParameter, LambdaEnvironmentParameter }).Compile();
+        public static ExpressionDelegate ParseExpression(string name, string text) {
+            var body = Body.Parse(text);
+// TODO: make configurable
+//Console.WriteLine($"Compiled '{name}': {body}");
+            return (ExpressionDelegate)Expression.Lambda<ExpressionDelegate>(body, name, new[] { LambdaRecordParameter, LambdaEnvironmentParameter }).Compile();
+        }
 
         private static Parser<ExpressionType> Operator(string op, ExpressionType opType) => Parse.String(op).Token().Return(opType);
         private static Expression MakeRecordVariableReference(string name) {

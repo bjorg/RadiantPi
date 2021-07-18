@@ -131,6 +131,7 @@ namespace RadiantPi.Lumagen {
             _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
             _serialPort.DataReceived += SerialDataReceived;
             _serialPort.Open();
+            LogInformation("serial port is open");
         }
 
         public RadianceProClient(string portName, int baudRate = 9600, ILogger logger = null) : this(new SerialPort {
@@ -145,7 +146,14 @@ namespace RadiantPi.Lumagen {
         }, logger) { }
 
         //--- Properties ---
-        public bool Verbose { get; set; }
+        private bool _verbose;
+        public bool Verbose {
+            get => _verbose;
+            set {
+                LogInformation($"setting Verbose to {value}");
+                _verbose = value;
+            }
+        }
 
         //--- Methods ---
         public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync() {
@@ -165,7 +173,9 @@ namespace RadiantPi.Lumagen {
         }
 
         public async Task<GetModeInfoResponse> GetModeInfoAsync() {
-            var response = await SendAsync("ZQI24", expectResponse: true).ConfigureAwait(false);
+
+            // NOTE (2021-07-17, bjorg): don't ues 'ZQI23' or 'ZQI24' as it freezed the unit
+            var response = await SendAsync("ZQI22", expectResponse: true).ConfigureAwait(false);
             return ParseModeInfoResponse(response);
         }
 
@@ -205,13 +215,14 @@ namespace RadiantPi.Lumagen {
         //  Output shrink: Returns (top,left,bottom,right) 000-255 pixels (decimal)
 
         public void Dispose() {
-            LogInformation("Dispose");
+            _logger?.LogDebug("Dispose");
             _serialPort.DataReceived -= SerialDataReceived;
             _mutex.Dispose();
             if(_serialPort.IsOpen) {
                 _serialPort.DiscardInBuffer();
                 _serialPort.DiscardOutBuffer();
                 _serialPort.Close();
+                LogInformation("serial port is closed");
             }
             _serialPort.Dispose();
         }
@@ -330,20 +341,23 @@ namespace RadiantPi.Lumagen {
         private GetModeInfoResponse ParseModeInfoResponse(string response) {
             var data = response.Split(",");
             GetModeInfoResponse info = new();
-            switch(data.Length) {
-            case 23:
-            case 22:
+
+            // TODO:
+            // this is what is actually received: !I24,1,023,2160,0,0,178,220,-,0,000a,1,0,023,2160,178,2,1,p,P,05,05,178,220
+            if(data.Length >= 23) {
 
                 // v4 data fields
-                info.InputAspectRatio = data[21];
-                goto case 21;
-            case 21:
+                info.InputAspectRatio = data[22];
+            }
+
+            // NOTE (2021-07-17, bjorg): 22 column configuration may not actually exist
+            if(data.Length >= 21) {
 
                 // v3 data fields
                 info.VirtualInputSelected = uint.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture);
                 info.PhysicalInputSelected = uint.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture);
-                goto case 19;
-            case 19:
+            }
+            if(data.Length >= 19) {
 
                 // v2 data fields
                 info.OutputColorSpace = data[15] switch {
@@ -373,8 +387,8 @@ namespace RadiantPi.Lumagen {
                     "P" => RadianceProVideoMode.Progressive,
                     string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
                 };
-                goto case 15;
-            case 15:
+            }
+            if(data.Length >= 15) {
 
                 // v1 data fields
                 info.InputStatus = data[0] switch {
@@ -435,9 +449,6 @@ namespace RadiantPi.Lumagen {
                 info.OutputVerticalRate = data[12];
                 info.OutputVerticalResolution = data[13];
                 info.OutputAspectRatio = data[14];
-                break;
-            default:
-                throw new InvalidDataException($"invalid GetModeInfoResponse ({data.Length} columns)");
             }
             LogResponse(info);
             return info;
