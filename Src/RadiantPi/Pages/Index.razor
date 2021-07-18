@@ -44,10 +44,11 @@
         @RenderLabel("source-vertical-resolution", "Vertical Resolution", InputVerticalResolution ?? "(loading...)")
         @RenderLabel("source-vertical-refresh-rate", "Refresh Rate", InputVerticalRefreshRate ?? "(loading...)")
         @RenderLabel("source-raster-aspect-ratio", "Aspect Ratio (Content)", SourceContentAspectRatio ?? "(loading...)")
-        @RenderLabel("source-source-aspect-ratio", "Aspect Ratio (Source)", SourceRasterAspectRatio ?? "(loading...)")
-        @RenderLabel("input-aspect-ratio", "Aspect Ratio (Input)", InputAspectRatio ?? "(loading...)")
+        @RenderLabel("source-content-aspect-ratio", "Aspect Ratio (Source)", SourceRasterAspectRatio ?? "(loading...)")
         @RenderLabel("source-dynamic-range", "Dynamic Range", ModeInfo?.SourceDynamicRange.ToString() ?? "(loading...)")
         @RenderLabel("source-3d-mode", "3D Mode", ModeInfo?.Source3DMode.ToString() ?? "(loading...)")
+        @RenderLabel("detected-content-aspect-ratio", "Detected Aspect Ratio (Content)", DetectedAspectRatio ?? "(loading...)")
+        @RenderLabel("detected-raster-aspect-ratio", "Detected Aspect Ratio (Raster)", DetectedRasterAspectRatio ?? "(loading...)")
     </fieldset>
 </form>
 
@@ -86,8 +87,12 @@
         ? ToAspectRatio(ModeInfo.SourceContentAspectRatio)
         : null;
 
-    private string InputAspectRatio => (ModeInfo != null)
-        ? ToAspectRatio(ModeInfo.InputAspectRatio)
+    private string DetectedRasterAspectRatio => (ModeInfo != null)
+        ? ToAspectRatio(ModeInfo.DetectedRasterAspectRatio)
+        : null;
+
+    private string DetectedAspectRatio => (ModeInfo != null)
+        ? ToAspectRatio(ModeInfo.DetectedAspectRatio)
         : null;
 
     private string SourceRasterAspectRatio => (ModeInfo != null)

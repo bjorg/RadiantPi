@@ -21,7 +21,7 @@ namespace RadiantPi.Lumagen.Model {
     public class ModeInfoDetails {
 
         // Radiance Pro only(release 041120 and later).
-        // Full information query(“Fullv4” for unsolicited status output):
+        // Full information query('Fullv4' for unsolicited status output):
         // Response= "!I23,M,RRR,VVVV,D,X,AAA,SSS,Y,T,WWWW,C,B,PPP,QQQQ,ZZZ,E,F,G,H,II,KK":
         // 00: M = Input status (0=no source, 1=active video, 2=internal pattern)
         // 01: RRR = Source vertical rate (e.g.059for 59.94, 060 for 60.00)
@@ -30,7 +30,7 @@ namespace RadiantPi.Lumagen.Model {
         // 04: X = Active input config number for current input resolution
         // 05: AAA = Source raster aspect(e.g. 178 for HD or UHD)
         // 06: SSS = Source content aspect (e.g. 240 for 2.40)
-        // 07: Y = NLS active (‘-‘ for normal, 'N' for NLS)
+        // 07: Y = NLS active ('-' for normal, 'N' for NLS)
         // 08: T = 3D output mode (0,1,2,4,8)
         // 09: WWWW = Output on. 16 bit hex, b0 to 15 for out 1 to 16. Bit=1 if on
         // 10: C = Active Output CMS (0 to 7)
@@ -56,13 +56,12 @@ namespace RadiantPi.Lumagen.Model {
         public string SourceVerticalResolution { get; set; }
         public RadianceProVideoMode SourceVideoMode { get; set; }
         public RadiancePro3D Source3DMode { get; set; }
-
-        // TODO: what type should this be?
-        public string ActiveInputConfigNumber { get; set; }
-
         public string SourceRasterAspectRatio { get; set; }
         public string SourceContentAspectRatio { get; set; }
         public RadianceProDynamicRange SourceDynamicRange { get; set; }
+
+        // TODO: what type should this be?
+        public string ActiveInputConfigNumber { get; set; }
 
         // Output Properties
         public bool OutputNonLinearStretchActive { get; set; }
@@ -75,7 +74,12 @@ namespace RadiantPi.Lumagen.Model {
         public RadianceProVideoMode OutputVideoMode { get; set; }
         public string OutputAspectRatio { get; set; }
         public RadianceProColorSpace OutputColorSpace { get; set; }
-        public string InputAspectRatio { get; set; }
+
+        // Detected Properties
+        public string DetectedAspectRatio { get; set; }
+
+        // TODO: determine what this field really is in the v4 response
+        public string DetectedRasterAspectRatio { get; set; }
     }
 
     public sealed class GetModeInfoResponse : ModeInfoDetails { }

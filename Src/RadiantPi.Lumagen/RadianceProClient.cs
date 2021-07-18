@@ -342,15 +342,13 @@ namespace RadiantPi.Lumagen {
             var data = response.Split(",");
             GetModeInfoResponse info = new();
 
-            // TODO:
-            // this is what is actually received: !I24,1,023,2160,0,0,178,220,-,0,000a,1,0,023,2160,178,2,1,p,P,05,05,178,220
+            // parse fields based on column count in the respons
             if(data.Length >= 23) {
 
                 // v4 data fields
-                info.InputAspectRatio = data[22];
+                info.DetectedAspectRatio = data[22];
+                info.DetectedRasterAspectRatio = data[21];
             }
-
-            // NOTE (2021-07-17, bjorg): 22 column configuration may not actually exist
             if(data.Length >= 21) {
 
                 // v3 data fields

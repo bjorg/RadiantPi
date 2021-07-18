@@ -135,7 +135,8 @@ namespace RadiantPi.Lumagen {
                 OutputVideoMode = RadianceProVideoMode.Progressive,
                 VirtualInputSelected = 1,
                 PhysicalInputSelected = 1,
-                InputAspectRatio = "178"
+                DetectedRasterAspectRatio = "178",
+                DetectedAspectRatio = "178"
             };
 
         public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input) {

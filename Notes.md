@@ -4,6 +4,9 @@
 
 * how to set stick resolution switches on memory click?
 
+Log to CloudWatch
+* https://github.com/aws/aws-logging-dotnet
+
 Received:
 ```
 !I24,1,023,2160,0,0,178,220,-,0,000a,1,0,023,2160,178,2,1,p,P,05,05,178,220
