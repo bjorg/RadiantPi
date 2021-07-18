@@ -119,7 +119,6 @@ namespace RadiantPi.Lumagen.Automation {
                         // apply all actions
                         _logger.LogInformation($"matched rule '{rule.Name}'");
                         await EvaluateActions(rule.Name, rule.Actions);
-                        break;
                     }
                 } catch(Exception e) {
                     _logger.LogError(e, $"error while evaluating rule '{rule.Name}'");
