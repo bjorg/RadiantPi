@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen.Automation.Internal;
@@ -52,7 +53,7 @@ namespace RadiantPi.Lumagen.Automation {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // process configuration
-            var variables = config?.Variables;
+            var variables = config?.Conditions;
             var rules = config?.Rules;
 
             // parse variable expressions
@@ -132,24 +133,34 @@ namespace RadiantPi.Lumagen.Automation {
                 var actionIndex = 0;
                 foreach(var action in actions) {
                     ++actionIndex;
-                    if(action.Send == null) {
-                        _logger.LogInformation($"{ruleName}, action {actionIndex} skipped: missing 'Send' value'");
-                        continue;
-                    }
+
+                    // determine target for command
                     switch(action.Target) {
                     case "RadiancePro":
-                    case null:
                         _logger.LogInformation($"{ruleName}, action {actionIndex} sending command to 'RadiancePro': '{action.Send}'");
-                        await _client.SendAsync(action.Send, expectResponse: false);
+                        if(action.Send is null) {
+                            _logger.LogWarning($"{ruleName}, action {actionIndex} skipped: missing 'Send' value'");
+                            continue;
+                        } else {
+                            await _client.SendAsync(Unescape(action.Send), expectResponse: false);
+                        }
                         break;
                     default:
-                        _logger.LogInformation($"{ruleName}, action {actionIndex} skipped: unrecognized target '{action.Target ?? "<null>"}'");
+                        _logger.LogWarning($"{ruleName}, action {actionIndex} skipped: unrecognized target '{action.Target ?? "<null>"}'");
                         return;
+                    }
+
+                    // optional wait after command was run
+                    if(action.Wait is not null) {
+                        await Task.Delay(TimeSpan.FromSeconds(action.Wait.Value));
                     }
                 }
             } else {
                 _logger.LogInformation($"{ruleName}: no actions");
             }
+
+            // local functions
+            string Unescape(string command) => Regex.Unescape(command);
         }
 
         //--- IDisposable Members ---

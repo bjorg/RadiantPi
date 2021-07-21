@@ -53,7 +53,7 @@ namespace RadiantPi {
             services.AddSingleton<IRadiancePro>(services => {
                 var radiancePro = Configuration.GetSection("RadiancePro");
                 var config = radiancePro.Get<RadianceProClientConfig>();
-                if((config == null) || (config.PortName == null) || config.Mock.GetValueOrDefault()) {
+                if((config is null) || (config.PortName is null) || config.Mock.GetValueOrDefault()) {
 
                     // default to mock configuration when no configuration is found
                     ConsoleLogger.LogWarning("using RadiancePro mock client configuration");

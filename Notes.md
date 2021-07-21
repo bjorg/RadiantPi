@@ -39,3 +39,61 @@ Emitted:
   "InputAspectRatio": "220"
 }
 ```
+
+## Action Format Evolution
+```json
+{
+  "Device": "RadiancePro",
+  "Commands": [
+    {
+      "Send": "c"
+    },
+    {
+      "Display": {
+        "Message": "hi",
+        "Align": "center"
+      }
+    }
+  ]
+}
+
+```
+
+```yaml
+Automation:
+  Conditions:
+    $FitHeight: (DetectedAspectRatio > '') && (DetectedAspectRatio < 178)
+    $FitWidth: (DetectedAspectRatio > '') && (DetectedAspectRatio >= 178) &&
+      (DetectedAspectRatio <= 200)
+    $FitNative: (DetectedAspectRatio > '') && (DetectedAspectRatio > 200)
+  Rules:
+    - Name: SwitchToFitHeight
+      Condition: $FitHeight
+      Actions:
+      - Device: RadiancePro
+        Commands:
+          - Send: c
+          - Display:
+              Message: Fit Height
+              Align: center
+
+    - Name: SwitchToFitWidth
+      Condition: $FitWidth
+      Actions:
+      - Device: RadiancePro
+        Commands:
+          - Send: b
+          - Display:
+              Message: Fit Width
+              Align: center
+
+    - Name: SwitchToNative
+      Condition: $FitNative
+      Actions:
+      - Device: RadiancePro
+        Commands:
+          - Send: a
+          - Display:
+              Message: Native
+              Align: center
+```

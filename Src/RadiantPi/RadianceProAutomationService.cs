@@ -51,7 +51,7 @@ namespace RadiantPi {
                 .GetSection("RadiancePro")
                 .GetSection("Automation")
                 .Get<AutomationConfig>();
-            if(automationConfig != null) {
+            if(automationConfig is not null) {
                 using var automation = new RadianceProAutomation(_client, automationConfig, _logger);
 
                 // initiate client events

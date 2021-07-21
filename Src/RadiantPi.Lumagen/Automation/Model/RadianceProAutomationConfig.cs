@@ -23,7 +23,7 @@ namespace RadiantPi.Lumagen.Automation.Model {
     public sealed class AutomationConfig {
 
         //--- Properties ---
-        public Dictionary<string, string> Variables { get; set; } = new();
+        public Dictionary<string, string> Conditions { get; set; } = new();
         public List<ModeChangedRule> Rules { get; set; } = new();
     }
 
@@ -40,5 +40,6 @@ namespace RadiantPi.Lumagen.Automation.Model {
         //--- Properties ---
         public string Target { get; set; }
         public string Send { get; set; }
+        public double? Wait { get; set; }
     }
 }
