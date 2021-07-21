@@ -9,60 +9,6 @@ namespace RadiantPi.Core.Telnet {
 
     public sealed class TelnetClient : ITelnet {
 
-        //--- Class Methods ---
-        private static async Task WaitForMessages(
-            TcpClient tcpClient,
-            StreamReader streamReader,
-            Action<string> messageReceived,
-            CancellationTokenSource cancellationToken
-        ) {
-            try {
-                while(true) {
-
-                    // check if cancelation token is set
-                    if(cancellationToken.IsCancellationRequested) {
-
-                        // operation was canceled
-                        break;
-                    }
-
-                    // attempt to read from socket
-                    try {
-                        if(!tcpClient.Connected) {
-
-                            // client is no longer connected
-                            break;
-                        }
-                        var message = await streamReader.ReadLineAsync().ConfigureAwait(false);
-                        if(message == null) {
-
-                            // found end of stream
-                            break;
-                        }
-
-                        // ignore empty messages
-                        if(!string.IsNullOrWhiteSpace(message)) {
-                            messageReceived(message);
-                        }
-                    } catch(ObjectDisposedException) {
-
-                        // nothing to do: underlying stream was closed and disposed
-                        break;
-                    } catch(IOException) {
-
-                        // nothing to do: underlying stream was disconnected
-                        break;
-                    } catch {
-
-                        // TODO: add mechanism for reporting asynchronous exceptions
-                        break;
-                    }
-                }
-            } finally {
-                streamReader.Close();
-            }
-        }
-
         //--- Fields ---
         private readonly int _port;
         private readonly string _host;
@@ -170,14 +116,64 @@ namespace RadiantPi.Core.Telnet {
             _ = WaitForMessages(
                 _tcpClient,
                 streamReader,
-                OnMessageReceived,
                 _internalCancellation
             );
         }
 
-        private void OnMessageReceived(string message) => MessageReceived?.Invoke(this, new TelnetMessageReceivedEventArgs {
-            Message = message
-        });
+        private async Task WaitForMessages(
+            TcpClient tcpClient,
+            StreamReader streamReader,
+            CancellationTokenSource cancellationToken
+        ) {
+            try {
+                while(true) {
+
+                    // check if cancelation token is set
+                    if(cancellationToken.IsCancellationRequested) {
+
+                        // operation was canceled
+                        break;
+                    }
+
+                    // attempt to read from socket
+                    try {
+                        if(!tcpClient.Connected) {
+
+                            // client is no longer connected
+                            break;
+                        }
+                        var message = await streamReader.ReadLineAsync().ConfigureAwait(false);
+                        if(message == null) {
+
+                            // found end of stream
+                            break;
+                        }
+
+                        // ignore empty messages
+                        if(!string.IsNullOrWhiteSpace(message)) {
+                            _logger.LogDebug($"received: '{message}'");
+                            MessageReceived?.Invoke(this, new TelnetMessageReceivedEventArgs {
+                                Message = message
+                            });
+                        }
+                    } catch(ObjectDisposedException) {
+
+                        // nothing to do: underlying stream was closed and disposed
+                        break;
+                    } catch(IOException) {
+
+                        // nothing to do: underlying stream was disconnected
+                        break;
+                    } catch {
+
+                        // TODO: add mechanism for reporting asynchronous exceptions
+                        break;
+                    }
+                }
+            } finally {
+                streamReader.Close();
+            }
+        }
 
         private void Dispose(bool disposing) {
             if(_disposed) {
