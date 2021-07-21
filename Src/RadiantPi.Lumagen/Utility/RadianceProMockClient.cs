@@ -24,7 +24,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using RadiantPi.Lumagen.Model;
 
-namespace RadiantPi.Lumagen {
+namespace RadiantPi.Lumagen.Utility {
 
     public sealed class RadianceProMockClient : IRadiancePro {
 

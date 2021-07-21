@@ -28,6 +28,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen.Model;
+using RadiantPi.Lumagen.Utility;
 
 namespace RadiantPi.Lumagen {
 
