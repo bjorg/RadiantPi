@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using RadiantPi.Core.Telnet;
 using RadiantPi.Sony.Cledis.Exceptions;
 using static RadiantPi.Sony.Cledis.Internal.Converters;
@@ -34,8 +35,7 @@ namespace RadiantPi.Sony.Cledis {
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
 
         //--- Constructors ---
-        public SonyCledisClient(string host, ushort port) : this(new TelnetClient(host, port)) { }
-        public SonyCledisClient(SonyCledisClientConfig config) : this(new TelnetClient(config.Host, config.Port)) { }
+        public SonyCledisClient(SonyCledisClientConfig config, ILogger logger = null) : this(new TelnetClient(config.Host, config.Port, logger)) { }
 
         public SonyCledisClient(ITelnet telnet) {
             _telnet = telnet ?? throw new ArgumentNullException(nameof(telnet));

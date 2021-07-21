@@ -51,10 +51,10 @@ namespace RadiantPi.Automation {
         private List<Rule> _rules = new();
 
         //--- Constructors ---
-        public RadiantPiAutomation(IRadiancePro client, ISonyCledis cledisClient, AutomationConfig config, ILogger logger) {
+        public RadiantPiAutomation(IRadiancePro client, ISonyCledis cledisClient, AutomationConfig config, ILogger logger = null) {
             _radianceProClient = client ?? throw new ArgumentNullException(nameof(client));
             _cledisClient = cledisClient ?? throw new ArgumentNullException(nameof(cledisClient));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _logger = logger;
 
             // process configuration
             var variables = config?.Conditions;
@@ -65,10 +65,10 @@ namespace RadiantPi.Automation {
                 foreach(var (variableName, variableDefinition) in variables) {
                     try {
                         var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(variableName, variableDefinition);
-                        _logger.LogDebug($"compiled '{variableName}' => {expression}");
+                        _logger?.LogDebug($"compiled '{variableName}' => {expression}");
                         _variables.Add(variableName, (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile());
                     } catch(Exception e) {
-                        _logger.LogError(e, $"error while adding variable '{variableName}'");
+                        _logger?.LogError(e, $"error while adding variable '{variableName}'");
                     }
                 }
             }
@@ -81,7 +81,7 @@ namespace RadiantPi.Automation {
                     var ruleName = rule.Name ?? $"Rule #{ruleIndex}";
                     try {
                         var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, rule.Condition);
-                        _logger.LogDebug($"compiled '{rule.Condition}' => {expression}");
+                        _logger?.LogDebug($"compiled '{rule.Condition}' => {expression}");
                         _rules.Add(new() {
                             Name = ruleName,
                             ConditionDefinition = rule.Condition,
@@ -89,7 +89,7 @@ namespace RadiantPi.Automation {
                             Actions = rule.Actions
                         });
                     } catch(Exception e) {
-                        _logger.LogError(e, $"error while adding rule '{ruleName}'");
+                        _logger?.LogError(e, $"error while adding rule '{ruleName}'");
                     }
                 }
             }
@@ -102,7 +102,7 @@ namespace RadiantPi.Automation {
 
         //--- Methods ---
         public async void OnModeInfoChanged(object sender, ModeInfoDetails modeInfo) {
-            _logger.LogDebug("event received");
+            _logger?.LogDebug("event received");
 
             // create environment by evaluating all variables
             var environment = new Dictionary<string, bool>();
@@ -112,21 +112,21 @@ namespace RadiantPi.Automation {
             var options = new JsonSerializerOptions {
                 WriteIndented = true
             };
-            _logger.LogDebug($"environment: {JsonSerializer.Serialize(environment, options)}");
+            _logger?.LogDebug($"environment: {JsonSerializer.Serialize(environment, options)}");
 
             // find first rule that matches
             foreach(var rule in _rules) {
                 try {
                     var eval = rule.Condition(modeInfo, environment);
-                    _logger.LogDebug($"rule '{rule.Name}': {rule.ConditionDefinition} ==> {eval}");
+                    _logger?.LogDebug($"rule '{rule.Name}': {rule.ConditionDefinition} ==> {eval}");
                     if(eval) {
 
                         // apply all actions
-                        _logger.LogInformation($"matched rule '{rule.Name}'");
+                        _logger?.LogInformation($"matched rule '{rule.Name}'");
                         await EvaluateActions(rule.Name, rule.Actions);
                     }
                 } catch(Exception e) {
-                    _logger.LogError(e, $"error while evaluating rule '{rule.Name}'");
+                    _logger?.LogError(e, $"error while evaluating rule '{rule.Name}'");
                     break;
                 }
             }
@@ -144,7 +144,7 @@ namespace RadiantPi.Automation {
                     } else if(action.SonyCledisPictureMode is not null) {
                         await _cledisClient.SetPictureModeAsync(Enum.Parse<SonyCledisPictureMode>(action.SonyCledisPictureMode));
                     } else {
-                        _logger.LogWarning($"{ruleName}, action {actionIndex} skipped: unrecognized command");
+                        _logger?.LogWarning($"{ruleName}, action {actionIndex} skipped: unrecognized command");
                     }
 
                     // optional wait after command was run
@@ -153,7 +153,7 @@ namespace RadiantPi.Automation {
                     }
                 }
             } else {
-                _logger.LogInformation($"{ruleName}: no actions");
+                _logger?.LogInformation($"{ruleName}: no actions");
             }
 
             // local functions

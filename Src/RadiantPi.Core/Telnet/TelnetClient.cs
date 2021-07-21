@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace RadiantPi.Core.Telnet {
 
@@ -65,15 +66,17 @@ namespace RadiantPi.Core.Telnet {
         //--- Fields ---
         private readonly int _port;
         private readonly string _host;
+        private readonly ILogger _logger;
         private CancellationTokenSource _internalCancellation;
         private TcpClient _tcpClient;
         private StreamWriter _streamWriter;
         private bool _disposed = false;
 
         //--- Constructors ---
-        public TelnetClient(string host, int port) {
+        public TelnetClient(string host, int port, ILogger logger = null) {
             _host = host;
             _port = port;
+            _logger = logger;
         }
 
         //--- Event Handlers ---
@@ -85,8 +88,10 @@ namespace RadiantPi.Core.Telnet {
         //--- Methods ---
         public async Task SendAsync(string message) {
             if(_disposed) {
+                _logger?.LogWarning("can't send on disposed telnet socket");
                 throw new ObjectDisposedException("TelnetClient");
             }
+            _logger?.LogDebug($"sending: '{message}'");
 
             // open connection
             await ConnectAsync().ConfigureAwait(false);
@@ -96,6 +101,7 @@ namespace RadiantPi.Core.Telnet {
         }
 
         public void Disconnect() {
+            _logger?.LogDebug($"disconnecting");
             if(_tcpClient == null) {
 
                 // nothing to do
@@ -139,6 +145,7 @@ namespace RadiantPi.Core.Telnet {
             if(_tcpClient?.Connected ?? false) {
                 return;
             }
+            _logger?.LogDebug($"connecting");
 
             // cancel any previous listener
             _internalCancellation?.Cancel();
