@@ -75,43 +75,43 @@
     //--- Properties ---
     private bool Disabled { get; set; } = true;
 
-    private string InputVerticalResolution => (ModeInfo != null)
+    private string InputVerticalResolution => (ModeInfo is not null)
         ? ToResolution(ModeInfo.SourceVerticalResolution, ModeInfo.SourceVideoMode)
         : null;
 
-    private string InputVerticalRefreshRate => (ModeInfo != null)
+    private string InputVerticalRefreshRate => (ModeInfo is not null)
         ? ToRefreshRate(ModeInfo.SourceVerticalRate)
         : null;
 
-    private string SourceContentAspectRatio => (ModeInfo != null)
+    private string SourceContentAspectRatio => (ModeInfo is not null)
         ? ToAspectRatio(ModeInfo.SourceContentAspectRatio)
         : null;
 
-    private string DetectedRasterAspectRatio => (ModeInfo != null)
+    private string DetectedRasterAspectRatio => (ModeInfo is not null)
         ? ToAspectRatio(ModeInfo.DetectedRasterAspectRatio)
         : null;
 
-    private string DetectedAspectRatio => (ModeInfo != null)
+    private string DetectedAspectRatio => (ModeInfo is not null)
         ? ToAspectRatio(ModeInfo.DetectedAspectRatio)
         : null;
 
-    private string SourceRasterAspectRatio => (ModeInfo != null)
+    private string SourceRasterAspectRatio => (ModeInfo is not null)
         ? ToAspectRatio(ModeInfo.SourceRasterAspectRatio)
         : null;
 
-    private string OutputEnabled => (ModeInfo != null)
+    private string OutputEnabled => (ModeInfo is not null)
         ? Convert.ToString(ModeInfo.OutputEnabled, 2).PadLeft(16, '0')
         : null;
 
-    private string OutputVerticalResolution => (ModeInfo != null)
+    private string OutputVerticalResolution => (ModeInfo is not null)
         ? ToResolution(ModeInfo.OutputVerticalResolution, ModeInfo.OutputVideoMode)
         : null;
 
-    private string OutputVerticalRefreshRate => (ModeInfo != null)
+    private string OutputVerticalRefreshRate => (ModeInfo is not null)
         ? ToRefreshRate(ModeInfo.OutputVerticalRate)
         : null;
 
-    private string OutputAspectRatio => (ModeInfo != null)
+    private string OutputAspectRatio => (ModeInfo is not null)
         ? ToAspectRatio(ModeInfo.OutputAspectRatio, ModeInfo.OutputNonLinearStretchActive)
         : null;
 

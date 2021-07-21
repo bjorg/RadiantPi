@@ -214,6 +214,20 @@ namespace RadiantPi.Lumagen {
         // ZQO03
         //  Output shrink: Returns (top,left,bottom,right) 000-255 pixels (decimal)
 
+        // ZY418CRRGGBB<CR>
+        //  Set RS232 message command colors and transparency (Radiance Pro only)—C=0,1,2.
+        //  A 0=sets background color. 1=sets foreground color. 2=sets blend value.
+        //  RRGGBB for foreground, background id RGB color were RR, GG, or BB is hexadecimal 00-ff (0-256) value.
+        //  When setting blend value, only last B digit is used so range is 000001-00000f where 'f'isopaque messages and '1'is near transparent.
+
+        // ZTMxxxx<CR>
+        //  Print message on the screen-- M = '0' to '9'... '9' leaves message until "ZC" sent.
+        //  2 lines, 30 characters per line, legal characters '' through 'z' (0x20 - 0x7a in hex), a carriage return or '{' can be used to terminate message.
+        //  ASCII extended characters set solid block for use as a volume bar.
+
+        // ZX
+        //  Clear-- Clear any onscreen message
+
         public void Dispose() {
             _logger?.LogDebug("Dispose");
             _serialPort.DataReceived -= SerialDataReceived;
@@ -331,7 +345,7 @@ namespace RadiantPi.Lumagen {
                 || response.StartsWith(MODE_INFO_RESPONSE_V4, StringComparison.Ordinal)
             ) {
                 var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length));
-                if(modeInfoResponse != null) {
+                if(modeInfoResponse is not null) {
                     LogInformation("event: ModeInfoChanged");
                     ModeInfoChanged?.Invoke(this, modeInfoResponse);
                 }
