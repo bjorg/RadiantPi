@@ -26,19 +26,21 @@ using RadiantPi.Lumagen;
 using RadiantPi.Automation;
 using RadiantPi.Automation.Model;
 using RadiantPi.Sony.Cledis;
+using System.Text.Json;
+using System.IO;
 
 namespace RadiantPi {
 
-    public class RadianceProAutomationService : BackgroundService {
+    public class AutomationService : BackgroundService {
 
         //--- Fields ---
-        private readonly ILogger<RadianceProAutomationService> _logger;
+        private readonly ILogger<AutomationService> _logger;
         private readonly IConfiguration _configuration;
         private readonly IRadiancePro _radianceProClient;
         private readonly ISonyCledis _cledisClient;
 
         //--- Constructors ---
-        public RadianceProAutomationService(IConfiguration configuration, IRadiancePro radianceProClient, ISonyCledis cledisClient, ILogger<RadianceProAutomationService> logger) {
+        public AutomationService(IConfiguration configuration, IRadiancePro radianceProClient, ISonyCledis cledisClient, ILogger<AutomationService> logger) {
             _configuration = configuration ?? throw new System.ArgumentNullException(nameof(configuration));
             _radianceProClient = radianceProClient ?? throw new System.ArgumentNullException(nameof(radianceProClient));
             _cledisClient = cledisClient ?? throw new System.ArgumentNullException(nameof(cledisClient));
@@ -50,10 +52,8 @@ namespace RadiantPi {
             _logger.LogInformation("starting");
 
             // initialize client automation
-            var automationConfig = _configuration
-                .GetSection("RadiancePro")
-                .GetSection("Automation")
-                .Get<AutomationConfig>();
+            var automationFile = _configuration.GetValue<string>("Automation");
+            var automationConfig = JsonSerializer.Deserialize<AutomationConfig>(File.ReadAllText(automationFile));
             if(automationConfig is not null) {
                 using var automation = new RadiantPiAutomation(_radianceProClient, _cledisClient, automationConfig, _logger);
 

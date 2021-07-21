@@ -81,7 +81,7 @@ namespace RadiantPi {
             });
 
             // add RadiancePro automation service
-            services.AddHostedService<RadianceProAutomationService>();
+            services.AddHostedService<AutomationService>();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
