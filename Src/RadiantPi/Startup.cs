@@ -23,6 +23,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen;
+using RadiantPi.Sony.Cledis;
+using RadiantPi.Sony.Cledis.Mock;
 
 namespace RadiantPi {
 
@@ -53,7 +55,7 @@ namespace RadiantPi {
             services.AddSingleton<IRadiancePro>(services => {
                 var radiancePro = Configuration.GetSection("RadiancePro");
                 var config = radiancePro.Get<RadianceProClientConfig>();
-                if((config is null) || (config.PortName is null) || config.Mock.GetValueOrDefault()) {
+                if((config is null) || config.Mock.GetValueOrDefault()) {
 
                     // default to mock configuration when no configuration is found
                     ConsoleLogger.LogWarning("using RadiancePro mock client configuration");
@@ -63,6 +65,19 @@ namespace RadiantPi {
                 }
                 var clientLogger = services.GetService<ILoggerFactory>().CreateLogger<RadianceProClient>();
                 return RadianceProClient.Initialize(config, clientLogger);
+            });
+
+            // add Sony Cledis client
+            services.AddSingleton<ISonyCledis>(services => {
+                var sonyCledis = Configuration.GetSection("SonyCledis");
+                var config = sonyCledis.Get<SonyCledisClientConfig>();
+                if((config is null) || config.Mock.GetValueOrDefault()) {
+
+                    // default to mock configuration when no configuration is found
+                    ConsoleLogger.LogWarning("using Sony Cledis mock client configuration");
+                    return new SonyCledisMockClient();
+                }
+                return new SonyCledisClient(config);
             });
 
             // add RadiancePro automation service

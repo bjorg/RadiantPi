@@ -14,6 +14,7 @@ namespace RadiantPi.Sony.Cledis {
         //--- Properties ---
         public string Host { get; set; }
         public ushort Port { get; set; }
+        public bool? Mock { get; set; }
     }
 
     public class SonyCledisClient : ISonyCledis {

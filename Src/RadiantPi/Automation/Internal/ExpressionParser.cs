@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Sprache;
 
-namespace RadiantPi.Lumagen.Automation.Internal {
+namespace RadiantPi.Automation.Internal {
 
     // TODO: recognize 'string' value in boolean by comparing to null
     //  * foo && foo > 100

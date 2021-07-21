@@ -23,13 +23,15 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using RadiantPi.Lumagen.Automation.Internal;
-using RadiantPi.Lumagen.Automation.Model;
+using RadiantPi.Automation.Internal;
+using RadiantPi.Automation.Model;
+using RadiantPi.Lumagen;
 using RadiantPi.Lumagen.Model;
+using RadiantPi.Sony.Cledis;
 
-namespace RadiantPi.Lumagen.Automation {
+namespace RadiantPi.Automation {
 
-    public class RadianceProAutomation : IDisposable {
+    public class RadiantPiAutomation : IDisposable {
 
         //--- Types ---
         private class Rule {
@@ -42,14 +44,16 @@ namespace RadiantPi.Lumagen.Automation {
         }
 
         //--- Fields ---
-        private IRadiancePro _client;
+        private IRadiancePro _radianceProClient;
+        private ISonyCledis _cledisClient;
         private ILogger _logger;
         private Dictionary<string, ExpressionParser<ModeInfoDetails>.ExpressionDelegate> _variables = new();
         private List<Rule> _rules = new();
 
         //--- Constructors ---
-        public RadianceProAutomation(IRadiancePro client, AutomationConfig config, ILogger logger) {
-            _client = client ?? throw new System.ArgumentNullException(nameof(client));
+        public RadiantPiAutomation(IRadiancePro client, ISonyCledis cledisClient, AutomationConfig config, ILogger logger) {
+            _radianceProClient = client ?? throw new ArgumentNullException(nameof(client));
+            _cledisClient = cledisClient ?? throw new ArgumentNullException(nameof(cledisClient));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
             // process configuration
@@ -134,20 +138,13 @@ namespace RadiantPi.Lumagen.Automation {
                 foreach(var action in actions) {
                     ++actionIndex;
 
-                    // determine target for command
-                    switch(action.Target) {
-                    case "RadiancePro":
-                        _logger.LogInformation($"{ruleName}, action {actionIndex} sending command to 'RadiancePro': '{action.Send}'");
-                        if(action.Send is null) {
-                            _logger.LogWarning($"{ruleName}, action {actionIndex} skipped: missing 'Send' value'");
-                            continue;
-                        } else {
-                            await _client.SendAsync(Unescape(action.Send), expectResponse: false);
-                        }
-                        break;
-                    default:
-                        _logger.LogWarning($"{ruleName}, action {actionIndex} skipped: unrecognized target '{action.Target ?? "<null>"}'");
-                        return;
+                    // check what command is requested
+                    if(action.RadianceProSend is not null) {
+                        await _radianceProClient.SendAsync(Unescape(action.RadianceProSend), expectResponse: false);
+                    } else if(action.SonyCledisPictureMode is not null) {
+                        await _cledisClient.SetPictureModeAsync(Enum.Parse<SonyCledisPictureMode>(action.SonyCledisPictureMode));
+                    } else {
+                        _logger.LogWarning($"{ruleName}, action {actionIndex} skipped: unrecognized command");
                     }
 
                     // optional wait after command was run
@@ -166,7 +163,7 @@ namespace RadiantPi.Lumagen.Automation {
         //--- IDisposable Members ---
         void IDisposable.Dispose() {
             if(_rules.Any()) {
-                _client.ModeInfoChanged -= OnModeInfoChanged;
+                _radianceProClient.ModeInfoChanged -= OnModeInfoChanged;
             }
         }
     }

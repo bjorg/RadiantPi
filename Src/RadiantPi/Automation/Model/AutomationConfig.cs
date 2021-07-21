@@ -17,8 +17,9 @@
  */
 
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
-namespace RadiantPi.Lumagen.Automation.Model {
+namespace RadiantPi.Automation.Model {
 
     public sealed class AutomationConfig {
 
@@ -38,8 +39,12 @@ namespace RadiantPi.Lumagen.Automation.Model {
     public sealed class ModelChangedAction {
 
         //--- Properties ---
-        public string Target { get; set; }
-        public string Send { get; set; }
         public double? Wait { get; set; }
+
+        [JsonPropertyName("RadiancePro.Send")]
+        public string RadianceProSend { get; set; }
+
+        [JsonPropertyName("SonyCledis.PictureMode")]
+        public string SonyCledisPictureMode { get; set; }
     }
 }

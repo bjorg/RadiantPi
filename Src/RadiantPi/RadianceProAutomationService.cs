@@ -23,8 +23,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Internal;
 using RadiantPi.Lumagen;
-using RadiantPi.Lumagen.Automation;
-using RadiantPi.Lumagen.Automation.Model;
+using RadiantPi.Automation;
+using RadiantPi.Automation.Model;
+using RadiantPi.Sony.Cledis;
 
 namespace RadiantPi {
 
@@ -33,13 +34,15 @@ namespace RadiantPi {
         //--- Fields ---
         private readonly ILogger<RadianceProAutomationService> _logger;
         private readonly IConfiguration _configuration;
-        private readonly IRadiancePro _client;
+        private readonly IRadiancePro _radianceProClient;
+        private readonly ISonyCledis _cledisClient;
 
         //--- Constructors ---
-        public RadianceProAutomationService(ILogger<RadianceProAutomationService> logger, IConfiguration configuration, IRadiancePro client) {
-            _logger = logger;
-            _configuration = configuration;
-            _client = client;
+        public RadianceProAutomationService(IConfiguration configuration, IRadiancePro radianceProClient, ISonyCledis cledisClient, ILogger<RadianceProAutomationService> logger) {
+            _configuration = configuration ?? throw new System.ArgumentNullException(nameof(configuration));
+            _radianceProClient = radianceProClient ?? throw new System.ArgumentNullException(nameof(radianceProClient));
+            _cledisClient = cledisClient ?? throw new System.ArgumentNullException(nameof(cledisClient));
+            _logger = logger ?? throw new System.ArgumentNullException(nameof(logger));
         }
 
         //--- Methods ---
@@ -52,11 +55,11 @@ namespace RadiantPi {
                 .GetSection("Automation")
                 .Get<AutomationConfig>();
             if(automationConfig is not null) {
-                using var automation = new RadianceProAutomation(_client, automationConfig, _logger);
+                using var automation = new RadiantPiAutomation(_radianceProClient, _cledisClient, automationConfig, _logger);
 
                 // initiate client events
                 _logger.LogInformation("get current video mode");
-                await _client.GetModeInfoAsync();
+                await _radianceProClient.GetModeInfoAsync();
 
                 // wait until  we're requested to stop
                 cancellationToken.Register(() => _logger.LogInformation("received stop signal"));
