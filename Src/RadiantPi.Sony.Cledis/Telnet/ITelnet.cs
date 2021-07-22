@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace RadiantPi.Core.Telnet {
+namespace RadiantPi.Sony.Telnet {
 
     public sealed class TelnetMessageReceivedEventArgs : EventArgs {
 

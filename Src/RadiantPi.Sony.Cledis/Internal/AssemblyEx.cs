@@ -3,9 +3,9 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 
-namespace RadiantPi.Core.Utility {
+namespace RadiantPi.Sony.Internal {
 
-    public static class AssemblyEx {
+    internal static class AssemblyEx {
 
         //--- Extension Methods ---
         public static string ReadManifestResource(this System.Reflection.Assembly assembly, string resourceName, bool convertLineEndings = true) {

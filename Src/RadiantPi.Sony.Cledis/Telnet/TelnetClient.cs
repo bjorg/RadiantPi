@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace RadiantPi.Core.Telnet {
+namespace RadiantPi.Sony.Telnet {
 
     public sealed class TelnetClient : ITelnet {
 

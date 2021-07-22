@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using RadiantPi.Core.Utility;
+using RadiantPi.Sony.Internal;
 using static RadiantPi.Sony.Cledis.Internal.Converters;
 
 namespace RadiantPi.Sony.Cledis.Mock {

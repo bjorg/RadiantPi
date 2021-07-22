@@ -18,6 +18,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -123,7 +124,7 @@ namespace RadiantPi.Automation {
 
                         // apply all actions
                         _logger?.LogInformation($"matched rule '{rule.Name}'");
-                        await EvaluateActions(rule.Name, rule.Actions);
+                        await EvaluateActions(rule.Name, rule.Actions).ConfigureAwait(false);
                     }
                 } catch(Exception e) {
                     _logger?.LogError(e, $"error while evaluating rule '{rule.Name}'");
@@ -140,16 +141,22 @@ namespace RadiantPi.Automation {
 
                     // check what command is requested
                     if(action.RadianceProSend is not null) {
-                        await _radianceProClient.SendAsync(Unescape(action.RadianceProSend), expectResponse: false);
+                        await _radianceProClient.SendAsync(Unescape(action.RadianceProSend), expectResponse: false).ConfigureAwait(false);
                     } else if(action.SonyCledisPictureMode is not null) {
-                        await _cledisClient.SetPictureModeAsync(Enum.Parse<SonyCledisPictureMode>(action.SonyCledisPictureMode));
+                        await _cledisClient.SetPictureModeAsync(Enum.Parse<SonyCledisPictureMode>(action.SonyCledisPictureMode)).ConfigureAwait(false);
+                    } else if(action.ShellRun is not null) {
+                        if(action.ShellRun.WaitUntilFinished ?? true) {
+                            await ShellRunAsync(action.ShellRun.App, action.ShellRun.Arguments).ConfigureAwait(false);
+                        } else {
+                            _ = ShellRunAsync(action.ShellRun.App, action.ShellRun.Arguments);
+                        }
                     } else {
                         _logger?.LogWarning($"{ruleName}, action {actionIndex} skipped: unrecognized command");
                     }
 
                     // optional wait after command was run
                     if(action.Wait is not null) {
-                        await Task.Delay(TimeSpan.FromSeconds(action.Wait.Value));
+                        await Task.Delay(TimeSpan.FromSeconds(action.Wait.Value)).ConfigureAwait(false);
                     }
                 }
             } else {
@@ -158,6 +165,26 @@ namespace RadiantPi.Automation {
 
             // local functions
             string Unescape(string command) => Regex.Unescape(command);
+        }
+
+        private async Task ShellRunAsync(string app, string arguments) {
+            var process = new Process {
+                StartInfo = {
+                    FileName = app,
+                    Arguments = arguments,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false
+                },
+                EnableRaisingEvents = true
+            };
+            process.OutputDataReceived += (_, args) => _logger?.LogDebug($"shell [{app} {arguments}]: {args.Data}");
+            process.ErrorDataReceived += (_, args) => _logger?.LogDebug($"shell [{app} {arguments}]: {args.Data}");
+            process.Start();
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+            await process.WaitForExitAsync().ConfigureAwait(false);
         }
 
         //--- IDisposable Members ---
