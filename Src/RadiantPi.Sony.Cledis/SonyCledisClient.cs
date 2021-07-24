@@ -20,26 +20,18 @@ namespace RadiantPi.Sony.Cledis {
 
     public class SonyCledisClient : ISonyCledis {
 
-        //--- Class Methods ---
-        private static async Task ConfirmConnectionAsync(ITelnet client, TextReader reader, TextWriter writer) {
-            var handshake = await reader.ReadLineAsync();
-
-            // the controller sends 'NOKEY' when there is no need for authentication
-            if(handshake != "NOKEY") {
-                throw new NotSupportedException("Sony C-LED requires authentication");
-            }
-        }
-
         //--- Fields ---
         private readonly ITelnet _telnet;
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
+        private readonly ILogger _logger;
 
         //--- Constructors ---
-        public SonyCledisClient(SonyCledisClientConfig config, ILogger logger = null) : this(new TelnetClient(config.Host, config.Port, logger)) { }
+        public SonyCledisClient(SonyCledisClientConfig config, ILogger logger = null) : this(new TelnetClient(config.Host, config.Port, logger), logger) { }
 
-        public SonyCledisClient(ITelnet telnet) {
+        public SonyCledisClient(ITelnet telnet, ILogger logger) {
             _telnet = telnet ?? throw new ArgumentNullException(nameof(telnet));
             _telnet.ConfirmConnectionAsync = ConfirmConnectionAsync;
+            _logger = logger;
         }
 
         //--- Methods ---
@@ -188,6 +180,15 @@ namespace RadiantPi.Sony.Cledis {
             } finally {
                 _mutex.Release();
             }
+        }
+        private async Task ConfirmConnectionAsync(ITelnet client, TextReader reader, TextWriter writer) {
+            var handshake = await reader.ReadLineAsync();
+
+            // the controller sends 'NOKEY' when there is no need for authentication
+            if(handshake != "NOKEY") {
+                throw new NotSupportedException("Sony C-LED requires authentication");
+            }
+            _logger?.LogDebug("connected");
         }
     }
 }
