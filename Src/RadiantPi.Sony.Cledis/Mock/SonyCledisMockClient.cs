@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using RadiantPi.Sony.Internal;
-using static RadiantPi.Sony.Cledis.Internal.Converters;
 
 namespace RadiantPi.Sony.Cledis.Mock {
 
-    public class SonyCledisMockClient : ISonyCledis {
+    public class SonyCledisMockClient : ASonyCledisClient {
 
         //--- Constants ---
         private const long SERIAL_NUMBER = 1234567L;
@@ -18,18 +18,21 @@ namespace RadiantPi.Sony.Cledis.Mock {
         private SonyCledisPictureMode _mode = SonyCledisPictureMode.Mode1;
         private SonyCledisLightOutput _light = SonyCledisLightOutput.Low;
 
-        //--- Methods ---
-        public Task<IEnumerable<string>> GetErrorsAsync() => throw new NotImplementedException();
-        public Task<SonyCledisInput> GetInputAsync() => Task.FromResult(_input);
-        public Task<SonyCledisLightOutput> GetLightOutputAsync() => Task.FromResult(_light);
-        public Task<string> GetModelNameAsync() => Task.FromResult(MODEL_NAME);
-        public Task<IEnumerable<string>> GetModelNameListAsync() => throw new NotImplementedException();
-        public Task<SonyCledisPictureMode> GetPictureModeAsync() => Task.FromResult(_mode);
-        public Task<SonyCledisPowerStatus> GetPowerStatusAsync() => Task.FromResult(_power);
-        public Task<long> GetSerialNumberAsync() => Task.FromResult(SERIAL_NUMBER);
-        public Task<IEnumerable<string>> GetSerialNumberListAsync() => throw new NotImplementedException();
+        //--- Constructors ---
+        public SonyCledisMockClient(ILogger logger = null) : base(logger) { }
 
-        public Task<SonyCledisTemperatures> GetTemperatureAsync() {
+        //--- Methods ---
+        public override Task<IEnumerable<string>> GetErrorsAsync() => throw new NotImplementedException();
+        public override Task<SonyCledisInput> GetInputAsync() => Task.FromResult(_input);
+        public override Task<SonyCledisLightOutput> GetLightOutputAsync() => Task.FromResult(_light);
+        public override Task<string> GetModelNameAsync() => Task.FromResult(MODEL_NAME);
+        public override Task<IEnumerable<string>> GetModelNameListAsync() => throw new NotImplementedException();
+        public override Task<SonyCledisPictureMode> GetPictureModeAsync() => Task.FromResult(_mode);
+        public override Task<SonyCledisPowerStatus> GetPowerStatusAsync() => Task.FromResult(_power);
+        public override Task<long> GetSerialNumberAsync() => Task.FromResult(SERIAL_NUMBER);
+        public override Task<IEnumerable<string>> GetSerialNumberListAsync() => throw new NotImplementedException();
+
+        public override Task<SonyCledisTemperatures> GetTemperatureAsync() {
             if(_power == SonyCledisPowerStatus.On) {
                 var json = GetType().Assembly.ReadManifestResource("RadiantPi.Sony.Cledis.Resources.CledisTemperature.json.gz");
                 return Task.FromResult(ConvertTemperatureFromJson(json));
@@ -40,24 +43,24 @@ namespace RadiantPi.Sony.Cledis.Mock {
             });
         }
 
-        public Task<IEnumerable<Dictionary<string, string>>> GetVersionAsync() => throw new NotImplementedException();
+        public override Task<IEnumerable<Dictionary<string, string>>> GetVersionAsync() => throw new NotImplementedException();
 
-        public Task SetInputAsync(SonyCledisInput input) {
+        public override Task SetInputAsync(SonyCledisInput input) {
             _input = input;
             return Task.CompletedTask;
         }
 
-        public Task SetLightOutputAsync(SonyCledisLightOutput light) {
+        public override Task SetLightOutputAsync(SonyCledisLightOutput light) {
             _light = light;
             return Task.CompletedTask;
         }
 
-        public Task SetPictureModeAsync(SonyCledisPictureMode mode) {
+        public override Task SetPictureModeAsync(SonyCledisPictureMode mode) {
             _mode = mode;
             return Task.CompletedTask;
         }
 
-        public Task SetPowerAsync(SonyCledisPower power) {
+        public override Task SetPowerAsync(SonyCledisPower power) {
             switch(power) {
             case SonyCledisPower.On:
                 _power = SonyCledisPowerStatus.On;
@@ -71,6 +74,6 @@ namespace RadiantPi.Sony.Cledis.Mock {
             return Task.CompletedTask;
         }
 
-        public void Dispose() { }
+        public override void Dispose() { }
     }
 }
