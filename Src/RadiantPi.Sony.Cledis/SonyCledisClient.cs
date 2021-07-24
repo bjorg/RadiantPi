@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Sony.Cledis.Exceptions;
-using RadiantPi.Sony.Telnet;
+using RadiantPi.Telnet;
 using static RadiantPi.Sony.Cledis.Internal.Converters;
 
 namespace RadiantPi.Sony.Cledis {
