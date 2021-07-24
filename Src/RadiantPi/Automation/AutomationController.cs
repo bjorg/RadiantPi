@@ -55,12 +55,16 @@ namespace RadiantPi.Automation {
         }
 
         //--- Class Methods ---
-        private static HashSet<string> DetectChangedProperties(ModeInfoDetails current, ModeInfoDetails last) {
+        private HashSet<string> DetectChangedProperties(ModeInfoDetails current, ModeInfoDetails last) {
             var result = new HashSet<string>();
             foreach(var property in typeof(ModeInfoDetails).GetProperties()) {
                 var currentPropertyValue = property.GetValue(current);
                 var lastPropertyValue = property.GetValue(last);
-                if(currentPropertyValue != lastPropertyValue) {
+                if(currentPropertyValue is not null) {
+                    if(!currentPropertyValue.Equals(lastPropertyValue)) {
+                        result.Add(property.Name);
+                    }
+                } else if(lastPropertyValue is not null) {
                     result.Add(property.Name);
                 }
             }
