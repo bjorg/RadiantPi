@@ -22,7 +22,7 @@ namespace RadiantPi.Automation.Internal {
         private static Type RecordType = typeof(TRecord);
         private static readonly Parser<ExpressionType> And = Operator("&&", ExpressionType.AndAlso);
         private static readonly Parser<ExpressionType> Equal = Operator("==", ExpressionType.Equal);
-        private static readonly Parser<ExpressionType> GreaterThan = Operator(">", ExpressionType.GreaterThanOrEqual);
+        private static readonly Parser<ExpressionType> GreaterThan = Operator(">", ExpressionType.GreaterThan);
         private static readonly Parser<ExpressionType> GreaterThanOrEqual = Operator(">=", ExpressionType.GreaterThanOrEqual);
         private static readonly Parser<ExpressionType> LessThan = Operator("<", ExpressionType.LessThan);
         private static readonly Parser<ExpressionType> LessThanOrEqual = Operator("<=", ExpressionType.LessThanOrEqual);

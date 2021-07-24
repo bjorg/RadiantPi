@@ -1,8 +1,8 @@
 {
   "Conditions": {
-    "$FitHeight": "(DetectedAspectRatio > '') && (DetectedAspectRatio < 178)",
-    "$FitWidth": "(DetectedAspectRatio > '') && (DetectedAspectRatio >= 178) && (DetectedAspectRatio <= 200)",
-    "$FitNative": "(DetectedAspectRatio > '') && (DetectedAspectRatio > 200)",
+    "$FitHeight": "DetectedAspectRatio < 178",
+    "$FitWidth": "(DetectedAspectRatio >= 178) && (DetectedAspectRatio <= 200)",
+    "$FitNative": "DetectedAspectRatio > 200",
     "$HDR": "SourceDynamicRange == 'HDR'"
   },
   "Rules": [
