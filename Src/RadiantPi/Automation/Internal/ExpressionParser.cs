@@ -11,12 +11,14 @@ namespace RadiantPi.Automation.Internal {
     //  * foo && foo > 100
     //  * !foo || foo == 'bar'
 
+    // NOTE (2021-07-24, bjorg): this class is NOT threadsafe
     public static class ExpressionParser<TRecord> {
 
         //--- Types ---
-        public delegate bool ExpressionDelegate(TRecord record, Dictionary<string, bool> environment);
+        public delegate bool ExpressionDelegate(TRecord record, Dictionary<string, bool> conditions);
 
         //--- Class Fields ---
+        private static HashSet<string> _dependencies = new();
         private static Type RecordType = typeof(TRecord);
         private static readonly Parser<ExpressionType> And = Operator("&&", ExpressionType.AndAlso);
         private static readonly Parser<ExpressionType> Equal = Operator("==", ExpressionType.Equal);
@@ -49,14 +51,14 @@ namespace RadiantPi.Automation.Internal {
             from _2 in Parse.Char('\'')
             select Expression.Constant(value);
 
-        private static readonly Parser<Expression> RecordVariableReference =
+        private static readonly Parser<Expression> RecordPropertyReference =
             from name in Parse.Letter.AtLeastOnce().Text()
-            select MakeRecordVariableReference(name);
+            select MakeRecordPropertyReference(name);
 
-        private static readonly Parser<Expression> EnvironmentVariableReference =
+        private static readonly Parser<Expression> ConditionReference =
             from _ in Parse.Char('$')
             from name in Parse.Letter.AtLeastOnce().Text()
-            select MakeEnvironmentVariableReference("$" + name);
+            select MakeConditionReference("$" + name);
 
         private static readonly Parser<Expression> BoolTrueLiteral =
             from _ in Parse.String("true")
@@ -81,8 +83,8 @@ namespace RadiantPi.Automation.Internal {
                 .XOr(StringLiteral)
                 .XOr(BoolTrueLiteral)
                 .XOr(BoolFalseLiteral)
-                .XOr(EnvironmentVariableReference)
-                .XOr(RecordVariableReference);
+                .XOr(ConditionReference)
+                .XOr(RecordPropertyReference);
 
         private static readonly Parser<Expression> Operand =
             (
@@ -108,20 +110,24 @@ namespace RadiantPi.Automation.Internal {
             select body;
 
         private static readonly ParameterExpression LambdaRecordParameter = Expression.Parameter(typeof(TRecord), "record");
-        private static readonly ParameterExpression LambdaEnvironmentParameter = Expression.Parameter(typeof(Dictionary<string, bool>), "env");
+        private static readonly ParameterExpression LambdaConditionsParameter = Expression.Parameter(typeof(Dictionary<string, bool>), "conditions");
         private static readonly MethodInfo StringCompareMethod = typeof(string).GetMethod("Compare", new[] { typeof(string), typeof(string), typeof(StringComparison) });
-        private static readonly MethodInfo DictionaryGetItemMethod = typeof(Dictionary<string, bool>).GetMethod("get_Item", new[] { typeof(string) });
+        private static readonly MethodInfo GetConditionValueMethod = typeof(ExpressionParser<TRecord>).GetMethod("GetConditionValue", new[] { typeof(Dictionary<string, bool>), typeof(string) });
         private static readonly MethodInfo ObjectToStringMethod = typeof(object).GetMethod("ToString");
 
         //--- Class Methods ---
-        public static Expression<ExpressionDelegate> ParseExpression(string name, string text)
-            => Expression.Lambda<ExpressionDelegate>(Body.Parse(text), name, new[] { LambdaRecordParameter, LambdaEnvironmentParameter });
+        public static Expression<ExpressionDelegate> ParseExpression(string name, string text, out HashSet<string> dependencies) {
+            var result = Expression.Lambda<ExpressionDelegate>(Body.Parse(text), name, new[] { LambdaRecordParameter, LambdaConditionsParameter });
+            dependencies = _dependencies;
+            _dependencies = new();
+            return result;
+        }
 
         private static Parser<ExpressionType> Operator(string op, ExpressionType opType) => Parse.String(op).Token().Return(opType);
-        private static Expression MakeRecordVariableReference(string name) {
 
-            // TODO: better exception
-            var property = RecordType.GetProperty(name) ?? throw new NotSupportedException($"record property '{name}' does not exist");
+        private static Expression MakeRecordPropertyReference(string name) {
+            _dependencies.Add(name);
+            var property = RecordType.GetProperty(name) ?? throw new ExpressionParserPropertyNotFoundException(name);
             Expression result = Expression.Property(LambdaRecordParameter, property);
             if(property.PropertyType.IsEnum) {
                 result = Expression.Call(result, ObjectToStringMethod);
@@ -129,8 +135,10 @@ namespace RadiantPi.Automation.Internal {
             return result;
         }
 
-        private static Expression MakeEnvironmentVariableReference(string name)
-            => Expression.Call(LambdaEnvironmentParameter, DictionaryGetItemMethod, new[] { Expression.Constant(name) });
+        private static Expression MakeConditionReference(string name) {
+            _dependencies.Add(name);
+            return Expression.Call(instance: null, GetConditionValueMethod, new Expression[] { LambdaConditionsParameter, Expression.Constant(name) });
+        }
 
         private static Parser<U> EnumerateInput<T, U>(T[] inputs, Func<T, Parser<U>> parser)
             => i => inputs.Select(input => parser(input)(i)).FirstOrDefault(result => result.WasSuccessful) ?? Result.Failure<U>(null, null, null);
@@ -166,6 +174,13 @@ namespace RadiantPi.Automation.Internal {
                 }
             }
             return Expression.MakeBinary(binaryOp, left, right);
+        }
+
+        private static bool GetConditionValue(Dictionary<string, bool> conditions, string name) {
+            if(!conditions.TryGetValue(name, out var result)) {
+                throw new ExpressionParserConditionNotFoundException(name);
+            }
+            return result;
         }
     }
 }

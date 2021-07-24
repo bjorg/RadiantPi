@@ -35,21 +35,32 @@ namespace RadiantPi.Automation {
     public class AutomationController : IDisposable {
 
         //--- Types ---
+        private class Condition {
+
+            //--- Properties ---
+            public string Name { get; set; }
+            public string ConditionDefinition { get; set; }
+            public ExpressionParser<ModeInfoDetails>.ExpressionDelegate Function { get; set; }
+            public HashSet<string> Dependencies { get; set; }
+        }
+
         private class Rule {
 
             //--- Properties ---
             public string Name { get; set; }
             public string ConditionDefinition { get; set; }
-            public ExpressionParser<ModeInfoDetails>.ExpressionDelegate Condition { get; set; }
+            public ExpressionParser<ModeInfoDetails>.ExpressionDelegate ConditionFunction { get; set; }
             public IEnumerable<ModelChangedAction> Actions { get; set; }
+            public HashSet<string> Dependencies { get; set; }
         }
 
         //--- Fields ---
         private IRadiancePro _radianceProClient;
         private ISonyCledis _cledisClient;
         private ILogger _logger;
-        private Dictionary<string, ExpressionParser<ModeInfoDetails>.ExpressionDelegate> _variables = new();
+        private Dictionary<string, Condition> _conditions = new();
         private List<Rule> _rules = new();
+        private ModeInfoDetails _lastModeInfo = new();
 
         //--- Constructors ---
         public AutomationController(IRadiancePro client, ISonyCledis cledisClient, AutomationConfig config, ILogger logger = null) {
@@ -58,42 +69,8 @@ namespace RadiantPi.Automation {
             _logger = logger;
 
             // process configuration
-            var variables = config?.Conditions;
-            var rules = config?.Rules;
-
-            // parse variable expressions
-            if(variables?.Any() ?? false) {
-                foreach(var (variableName, variableDefinition) in variables) {
-                    try {
-                        var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(variableName, variableDefinition);
-                        _logger?.LogDebug($"compiled '{variableName}' => {expression}");
-                        _variables.Add(variableName, (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile());
-                    } catch(Exception e) {
-                        _logger?.LogError(e, $"error while adding variable '{variableName}'");
-                    }
-                }
-            }
-
-            // parse rules
-            if(rules?.Any() ?? false) {
-                var ruleIndex = 0;
-                foreach(var rule in rules) {
-                    ++ruleIndex;
-                    var ruleName = rule.Name ?? $"Rule #{ruleIndex}";
-                    try {
-                        var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, rule.Condition);
-                        _logger?.LogDebug($"compiled '{rule.Condition}' => {expression}");
-                        _rules.Add(new() {
-                            Name = ruleName,
-                            ConditionDefinition = rule.Condition,
-                            Condition = (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile(),
-                            Actions = rule.Actions
-                        });
-                    } catch(Exception e) {
-                        _logger?.LogError(e, $"error while adding rule '{ruleName}'");
-                    }
-                }
-            }
+            CompileConditions(config?.Conditions);
+            CompileRules(config?.Rules);
 
             // subscribe to mode-changed events
             if(_rules.Any()) {
@@ -102,27 +79,121 @@ namespace RadiantPi.Automation {
         }
 
         //--- Methods ---
-        public async void OnModeInfoChanged(object sender, ModeInfoDetails modeInfo) {
+        private void CompileConditions(Dictionary<string, string> conditions) {
+            if(!(conditions?.Any() ?? false)) {
+                return;
+            }
+
+            // parse condition expressions
+            foreach(var (conditionName, conditionDefinition) in conditions) {
+                try {
+                    var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(conditionName, conditionDefinition, out var dependencies);
+
+                    // verify that the condition does not depend on other conditions
+                    foreach(var dependency in dependencies.Where(dependency => dependency.StartsWith("$"))) {
+                        _logger?.LogError($"condition '{conditionName}' cannot depend on another condition: '{dependency}'");
+                    }
+
+                    // add compiled condition
+                    _logger?.LogDebug($"compiled '{conditionName}' => {expression}");
+                    _conditions.Add(conditionName, new() {
+                        Name = conditionName,
+                        ConditionDefinition = conditionDefinition,
+                        Function = (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile(),
+                        Dependencies = dependencies
+                    });
+                } catch(Exception e) {
+                    _logger?.LogError(e, $"error while adding condition '{conditionName}'");
+                }
+            }
+        }
+
+        private void CompileRules(List<ModeChangedRule> rules) {
+            if(!(rules?.Any() ?? false)) {
+                return;
+            }
+
+            // parse rules
+            var ruleIndex = 0;
+            foreach(var rule in rules) {
+                ++ruleIndex;
+                var ruleName = rule.Name ?? $"Rule #{ruleIndex}";
+                try {
+                    var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, rule.Condition, out var dependencies);
+
+                    // flatten condition dependencies
+                    var flattenedDependencies = new HashSet<string>();
+                    foreach(var dependency in dependencies) {
+
+                        // check if dependency is a condition
+                        if(dependency.StartsWith("$")) {
+
+                            // resolve dependencies for the condition
+                            if(_conditions.TryGetValue(dependency, out var condition)) {
+
+                                // add condition dependencies to rule dependencies
+                                foreach(var conditionDependency in condition.Dependencies) {
+                                    flattenedDependencies.Add(conditionDependency);
+                                }
+                            } else {
+                                _logger?.LogError($"rule '{ruleName}' uses undefined condition: '{dependency}'");
+                            }
+                        } else {
+                            flattenedDependencies.Add(dependency);
+                        }
+                    }
+
+                    // add compiled rule
+                    _logger?.LogDebug($"compiled '{rule.Condition}' => {expression}");
+                    _rules.Add(new() {
+                        Name = ruleName,
+                        ConditionDefinition = rule.Condition,
+                        ConditionFunction = (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile(),
+                        Actions = rule.Actions,
+                        Dependencies = dependencies
+                    });
+                } catch(Exception e) {
+                    _logger?.LogError(e, $"error while adding rule '{ruleName}'");
+                }
+            }
+        }
+
+        private async void OnModeInfoChanged(object sender, ModeInfoDetails modeInfo) {
             _logger?.LogDebug("event received");
 
-            // create environment by evaluating all variables
-            var environment = new Dictionary<string, bool>();
-            environment = _variables
-                .Select(variable => (Name: variable.Key, Value: variable.Value(modeInfo, environment)))
+            // evaluate all conditions
+            var conditions = new Dictionary<string, bool>();
+            conditions = _conditions
+                .Select(condition => (Name: condition.Key, Value: condition.Value.Function(modeInfo, conditions)))
                 .ToDictionary(kv => kv.Name, kv => kv.Value);
             var options = new JsonSerializerOptions {
                 WriteIndented = true
             };
-            _logger?.LogDebug($"environment: {JsonSerializer.Serialize(environment, options)}");
+            _logger?.LogDebug($"conditions: {JsonSerializer.Serialize(conditions, options)}");
 
-            // find first rule that matches
+            // detect which properties changed from last mode-info change
+            var changed = DetectChangedProperties(modeInfo, _lastModeInfo);
+            if(!changed.Any()) {
+                _logger?.LogDebug("no changes detected in event");
+                return;
+            }
+            _logger?.LogDebug($"changed event properties: {string.Join(", ", changed.OrderBy(dependency => dependency))}");
+
+            // evaluate all rules
             foreach(var rule in _rules) {
+
+                // only evaluate a rule if it depends on changed property
+                if(!rule.Dependencies.Any(dependency => changed.Contains(dependency))) {
+                    continue;
+                }
+
+                // evaluate rule and run actions if the condition passes
                 try {
-                    var eval = rule.Condition(modeInfo, environment);
+                    var eval = rule.ConditionFunction(modeInfo, conditions);
                     _logger?.LogDebug($"rule '{rule.Name}': {rule.ConditionDefinition} ==> {eval}");
                     if(eval) {
 
-                        // apply all actions
+                        // run all actions
                         _logger?.LogInformation($"matched rule '{rule.Name}'");
                         await EvaluateActions(rule.Name, rule.Actions).ConfigureAwait(false);
                     }
@@ -131,6 +202,7 @@ namespace RadiantPi.Automation {
                     break;
                 }
             }
+            _lastModeInfo = modeInfo;
         }
 
         private async Task EvaluateActions(string ruleName, IEnumerable<ModelChangedAction> actions) {
@@ -185,6 +257,18 @@ namespace RadiantPi.Automation {
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             await process.WaitForExitAsync().ConfigureAwait(false);
+        }
+
+        private HashSet<string> DetectChangedProperties(ModeInfoDetails current, ModeInfoDetails last) {
+            var result = new HashSet<string>();
+            foreach(var property in typeof(ModeInfoDetails).GetProperties()) {
+                var currentPropertyValue = property.GetValue(current);
+                var lastPropertyValue = property.GetValue(last);
+                if(!object.Equals(currentPropertyValue, lastPropertyValue)) {
+                    result.Add(property.Name);
+                }
+            }
+            return result;
         }
 
         //--- IDisposable Members ---
