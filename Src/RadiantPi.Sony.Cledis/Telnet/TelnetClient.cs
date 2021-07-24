@@ -37,12 +37,12 @@ namespace RadiantPi.Sony.Telnet {
                 _logger?.LogWarning("can't send on disposed telnet socket");
                 throw new ObjectDisposedException("TelnetClient");
             }
-            _logger?.LogDebug($"sending: '{message}'");
 
             // open connection
             await ConnectAsync().ConfigureAwait(false);
 
             // Send command + params
+            _logger?.LogDebug($"sending: '{message}'");
             await _streamWriter.WriteLineAsync(message).ConfigureAwait(false);
         }
 
