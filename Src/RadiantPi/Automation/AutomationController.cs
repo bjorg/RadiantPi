@@ -235,10 +235,13 @@ namespace RadiantPi.Automation {
 
                     // check what command is requested
                     if(action.RadianceProSend is not null) {
+                        _logger?.LogDebug($"RadiancePro.Send: {action.RadianceProSend}");
                         await _radianceProClient.SendAsync(Unescape(action.RadianceProSend), expectResponse: false).ConfigureAwait(false);
                     } else if(action.SonyCledisPictureMode is not null) {
+                        _logger?.LogDebug($"SonyCledis.PictureMode: {action.SonyCledisPictureMode}");
                         await _cledisClient.SetPictureModeAsync(Enum.Parse<SonyCledisPictureMode>(action.SonyCledisPictureMode)).ConfigureAwait(false);
                     } else if(action.ShellRun is not null) {
+                        _logger?.LogDebug($"Shell.Run: {action.ShellRun}");
                         if(action.ShellRun.WaitUntilFinished ?? true) {
                             await ShellRunAsync(action.ShellRun.App, action.ShellRun.Arguments).ConfigureAwait(false);
                         } else {
@@ -250,6 +253,7 @@ namespace RadiantPi.Automation {
 
                     // optional wait after command was run
                     if(action.Wait is not null) {
+                        _logger?.LogDebug($"Wait: {action.Wait.Value:#0.00} seconds");
                         await Task.Delay(TimeSpan.FromSeconds(action.Wait.Value)).ConfigureAwait(false);
                     }
                 }
