@@ -155,7 +155,7 @@ namespace RadiantPi.Sony.Cledis {
         }
 
         private async Task SendCommandAsync(string message)
-            => ValidateResponse(await SendAsync(message));
+            => ValidateResponse(await SendAsync(message + "\r\n"));
 
         private async Task<string> SendAsync(string message) {
             await _mutex.WaitAsync();
