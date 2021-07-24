@@ -174,9 +174,7 @@ namespace RadiantPi.Lumagen {
         }
 
         public async Task<GetModeInfoResponse> GetModeInfoAsync() {
-
-            // NOTE (2021-07-17, bjorg): don't ues 'ZQI23' or 'ZQI24' as it freezed the unit
-            var response = await SendAsync("ZQI22", expectResponse: true).ConfigureAwait(false);
+            var response = await SendAsync("ZQI24", expectResponse: true).ConfigureAwait(false);
             return ParseModeInfoResponse(response);
         }
 
