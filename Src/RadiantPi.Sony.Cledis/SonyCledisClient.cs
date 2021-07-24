@@ -13,7 +13,7 @@ namespace RadiantPi.Sony.Cledis {
 
         //--- Properties ---
         public string Host { get; set; }
-        public ushort Port { get; set; }
+        public ushort? Port { get; set; }
         public bool? Mock { get; set; }
     }
 
@@ -24,7 +24,7 @@ namespace RadiantPi.Sony.Cledis {
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
 
         //--- Constructors ---
-        public SonyCledisClient(SonyCledisClientConfig config, ILogger logger = null) : this(new TelnetClient(config.Host, config.Port, logger), logger) { }
+        public SonyCledisClient(SonyCledisClientConfig config, ILogger logger = null) : this(new TelnetClient(config.Host, config.Port ?? 53595, logger), logger) { }
 
         public SonyCledisClient(ITelnet telnet, ILogger logger) : base(logger) {
             _telnet = telnet ?? throw new ArgumentNullException(nameof(telnet));

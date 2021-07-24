@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -115,7 +116,7 @@ namespace RadiantPi.Automation {
                     }
 
                     // add compiled condition
-                    _logger?.LogDebug($"compiled '{conditionName}' => {expression}");
+                    _logger?.LogDebug($"compiled condition '{conditionName}' => {expression}");
                     _logger?.LogDebug($"dependencices: {DependenciesToString(dependencies)}");
                     _conditions.Add(conditionName, new() {
                         Name = conditionName,
@@ -165,7 +166,7 @@ namespace RadiantPi.Automation {
                     }
 
                     // add compiled rule
-                    _logger?.LogDebug($"compiled '{ruleName}' => {expression}");
+                    _logger?.LogDebug($"compiled rule '{ruleName}' => {expression}");
                     _logger?.LogDebug($"dependencices: {DependenciesToString(flattenedDependencies)}");
                     _rules.Add(new() {
                         Name = ruleName,
@@ -181,32 +182,36 @@ namespace RadiantPi.Automation {
         }
 
         private async void OnModeInfoChanged(object sender, ModeInfoDetails modeInfo) {
-            _logger?.LogDebug("event received");
+            var serializerOptions = new JsonSerializerOptions {
+                WriteIndented = true,
+                Converters = {
+                    new JsonStringEnumConverter()
+                }
+            };
+            _logger?.LogDebug($"event received: {JsonSerializer.Serialize(modeInfo, serializerOptions)}");
 
             // evaluate all conditions
             var conditions = new Dictionary<string, bool>();
             conditions = _conditions
                 .Select(condition => (Name: condition.Key, Value: condition.Value.Function(modeInfo, conditions)))
                 .ToDictionary(kv => kv.Name, kv => kv.Value);
-            var options = new JsonSerializerOptions {
-                WriteIndented = true
-            };
-            _logger?.LogDebug($"conditions: {JsonSerializer.Serialize(conditions, options)}");
+            _logger?.LogTrace($"conditions: {JsonSerializer.Serialize(conditions, serializerOptions)}");
 
             // detect which properties changed from last mode-info change
             var changed = DetectChangedProperties(modeInfo, _lastModeInfo);
             _lastModeInfo = modeInfo;
             if(!changed.Any()) {
-                _logger?.LogDebug("no changes detected in event");
+                _logger?.LogTrace("no changes detected in event");
                 return;
             }
-            _logger?.LogDebug($"changed event properties: {DependenciesToString(changed)}");
+            _logger?.LogTrace($"changed event properties: {DependenciesToString(changed)}");
 
             // evaluate all rules
             foreach(var rule in _rules) {
 
                 // only evaluate a rule if it depends on changed property
                 if(!rule.Dependencies.Any(dependency => changed.Contains(dependency))) {
+                    _logger?.LogDebug($"rule '{rule.Name}' has no dependencies on changes");
                     continue;
                 }
 
@@ -216,9 +221,9 @@ namespace RadiantPi.Automation {
                     _logger?.LogDebug($"rule '{rule.Name}': {rule.ConditionDefinition} ==> {eval}");
                     if(eval) {
 
-                        // run all actions
-                        _logger?.LogInformation($"matched rule '{rule.Name}'");
-                        await EvaluateActions(rule.Name, rule.Actions).ConfigureAwait(false);
+                        // dispatch all actions
+                        _logger?.LogInformation($"dispatching actions for rule '{rule.Name}'");
+                        await DispatchActions(rule.Name, rule.Actions).ConfigureAwait(false);
                     }
                 } catch(Exception e) {
                     _logger?.LogError(e, $"error while evaluating rule '{rule.Name}'");
@@ -227,7 +232,7 @@ namespace RadiantPi.Automation {
             }
         }
 
-        private async Task EvaluateActions(string ruleName, IEnumerable<ModelChangedAction> actions) {
+        private async Task DispatchActions(string ruleName, IEnumerable<ModelChangedAction> actions) {
             if(actions?.Any() ?? false) {
                 var actionIndex = 0;
                 foreach(var action in actions) {
@@ -257,8 +262,9 @@ namespace RadiantPi.Automation {
                         await Task.Delay(TimeSpan.FromSeconds(action.Wait.Value)).ConfigureAwait(false);
                     }
                 }
+                _logger?.LogDebug($"{ruleName}: actions done");
             } else {
-                _logger?.LogInformation($"{ruleName}: no actions");
+                _logger?.LogDebug($"{ruleName}: no actions");
             }
 
             // local functions
