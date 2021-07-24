@@ -47,7 +47,7 @@ namespace RadiantPi.Sony.Telnet {
         }
 
         public void Disconnect() {
-            _logger?.LogDebug($"disconnecting");
+            _logger?.LogInformation($"disconnecting");
             if(_tcpClient == null) {
 
                 // nothing to do
@@ -91,7 +91,7 @@ namespace RadiantPi.Sony.Telnet {
             if(_tcpClient?.Connected ?? false) {
                 return;
             }
-            _logger?.LogDebug($"connecting");
+            _logger?.LogInformation($"connecting");
 
             // cancel any previous listener
             _internalCancellation?.Cancel();
