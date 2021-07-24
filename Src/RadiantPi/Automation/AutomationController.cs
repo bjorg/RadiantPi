@@ -54,6 +54,22 @@ namespace RadiantPi.Automation {
             public HashSet<string> Dependencies { get; set; }
         }
 
+        //--- Class Methods ---
+        private static HashSet<string> DetectChangedProperties(ModeInfoDetails current, ModeInfoDetails last) {
+            var result = new HashSet<string>();
+            foreach(var property in typeof(ModeInfoDetails).GetProperties()) {
+                var currentPropertyValue = property.GetValue(current);
+                var lastPropertyValue = property.GetValue(last);
+                if(currentPropertyValue != lastPropertyValue) {
+                    result.Add(property.Name);
+                }
+            }
+            return result;
+        }
+
+        private static string DependenciesToString(IEnumerable<string> dependencies)
+            => string.Join(", ", dependencies.OrderBy(dependency => dependency));
+
         //--- Fields ---
         private IRadiancePro _radianceProClient;
         private ISonyCledis _cledisClient;
@@ -96,6 +112,7 @@ namespace RadiantPi.Automation {
 
                     // add compiled condition
                     _logger?.LogDebug($"compiled '{conditionName}' => {expression}");
+                    _logger?.LogDebug($"dependencices: {DependenciesToString(dependencies)}");
                     _conditions.Add(conditionName, new() {
                         Name = conditionName,
                         ConditionDefinition = conditionDefinition,
@@ -144,13 +161,14 @@ namespace RadiantPi.Automation {
                     }
 
                     // add compiled rule
-                    _logger?.LogDebug($"compiled '{rule.Condition}' => {expression}");
+                    _logger?.LogDebug($"compiled '{ruleName}' => {expression}");
+                    _logger?.LogDebug($"dependencices: {DependenciesToString(flattenedDependencies)}");
                     _rules.Add(new() {
                         Name = ruleName,
                         ConditionDefinition = rule.Condition,
                         ConditionFunction = (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile(),
                         Actions = rule.Actions,
-                        Dependencies = dependencies
+                        Dependencies = flattenedDependencies
                     });
                 } catch(Exception e) {
                     _logger?.LogError(e, $"error while adding rule '{ruleName}'");
@@ -173,11 +191,12 @@ namespace RadiantPi.Automation {
 
             // detect which properties changed from last mode-info change
             var changed = DetectChangedProperties(modeInfo, _lastModeInfo);
+            _lastModeInfo = modeInfo;
             if(!changed.Any()) {
                 _logger?.LogDebug("no changes detected in event");
                 return;
             }
-            _logger?.LogDebug($"changed event properties: {string.Join(", ", changed.OrderBy(dependency => dependency))}");
+            _logger?.LogDebug($"changed event properties: {DependenciesToString(changed)}");
 
             // evaluate all rules
             foreach(var rule in _rules) {
@@ -202,7 +221,6 @@ namespace RadiantPi.Automation {
                     break;
                 }
             }
-            _lastModeInfo = modeInfo;
         }
 
         private async Task EvaluateActions(string ruleName, IEnumerable<ModelChangedAction> actions) {
@@ -257,18 +275,6 @@ namespace RadiantPi.Automation {
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             await process.WaitForExitAsync().ConfigureAwait(false);
-        }
-
-        private HashSet<string> DetectChangedProperties(ModeInfoDetails current, ModeInfoDetails last) {
-            var result = new HashSet<string>();
-            foreach(var property in typeof(ModeInfoDetails).GetProperties()) {
-                var currentPropertyValue = property.GetValue(current);
-                var lastPropertyValue = property.GetValue(last);
-                if(!object.Equals(currentPropertyValue, lastPropertyValue)) {
-                    result.Add(property.Name);
-                }
-            }
-            return result;
         }
 
         //--- IDisposable Members ---
