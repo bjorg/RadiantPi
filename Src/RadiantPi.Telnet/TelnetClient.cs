@@ -18,6 +18,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,6 +27,16 @@ using Microsoft.Extensions.Logging;
 namespace RadiantPi.Telnet {
 
     public sealed class TelnetClient : ITelnet {
+
+        //--- Class Methods ---
+        private static string Escape(string text)
+            => string.Join("", text.Select(c => c switch {
+                >= (char)32 and < (char)127 => ((char)c).ToString(),
+                '\n' => "\\n",
+                '\r' => "\\r",
+                _ => $"\\u{(int)c:X4}"
+            }));
+
 
         //--- Fields ---
         private readonly int _port;
@@ -60,12 +71,12 @@ namespace RadiantPi.Telnet {
             await ConnectAsync().ConfigureAwait(false);
 
             // Send command + params
-            _logger?.LogDebug($"sending: '{message}'");
+            _logger?.LogInformation($"sending: '{Escape(message)}'");
             await _streamWriter.WriteLineAsync(message).ConfigureAwait(false);
         }
 
         public void Disconnect() {
-            _logger?.LogInformation($"disconnecting");
+            _logger?.LogInformation($"disconnecting telnet socket");
             if(_tcpClient == null) {
 
                 // nothing to do
@@ -109,7 +120,7 @@ namespace RadiantPi.Telnet {
             if(_tcpClient?.Connected ?? false) {
                 return;
             }
-            _logger?.LogInformation($"connecting");
+            _logger?.LogInformation($"connecting telnet socket");
 
             // cancel any previous listener
             _internalCancellation?.Cancel();
@@ -169,7 +180,7 @@ namespace RadiantPi.Telnet {
 
                         // ignore empty messages
                         if(!string.IsNullOrWhiteSpace(message)) {
-                            _logger.LogDebug($"received: '{message}'");
+                            _logger?.LogTrace($"received: '{Escape(message)}'");
                             MessageReceived?.Invoke(this, new TelnetMessageReceivedEventArgs {
                                 Message = message
                             });

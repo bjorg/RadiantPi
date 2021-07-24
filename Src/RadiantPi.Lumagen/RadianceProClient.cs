@@ -38,7 +38,6 @@ namespace RadiantPi.Lumagen {
         public string PortName { get; set; }
         public int? BaudRate { get; set; }
         public bool? Mock { get; set; }
-        public bool? Verbose { get; set; }
     }
 
     public sealed class RadianceProClient : IRadiancePro {
@@ -47,9 +46,7 @@ namespace RadiantPi.Lumagen {
         public static IRadiancePro Initialize(RadianceProClientConfig config, ILogger logger = null)
             => (config.Mock ?? false)
                 ? new RadianceProMockClient()
-                : new RadianceProClient(config.PortName, config.BaudRate ?? 9600, logger) {
-                    Verbose = config.Verbose ?? false
-                };
+                : new RadianceProClient(config.PortName, config.BaudRate ?? 9600, logger);
 
         private static string ToCommandCode(RadianceProMemory memory, bool allowAll)
             => memory switch {
@@ -115,6 +112,14 @@ namespace RadiantPi.Lumagen {
                _ => throw new ArgumentException("invalid style selection")
             };
 
+        private static string Escape(string text)
+            => string.Join("", text.Select(c => c switch {
+                >= (char)32 and < (char)127 => ((char)c).ToString(),
+                '\n' => "\\n",
+                '\r' => "\\r",
+                _ => $"\\u{(int)c:X4}"
+            }));
+
         private static string SanitizeText(string value, int maxLength) => new string(value.Take(maxLength).Select(c => (char.IsLetterOrDigit(c) ? c : ' ')).ToArray());
 
         //--- Fields ---
@@ -128,11 +133,11 @@ namespace RadiantPi.Lumagen {
         //--- Constructors ---
         public RadianceProClient(SerialPort serialPort, ILogger logger = null) {
             _logger = logger;
-            _responseReceivedEvent += DispatchEvents;
+            _responseReceivedEvent += DispatchEvent;
             _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
             _serialPort.DataReceived += SerialDataReceived;
             _serialPort.Open();
-            LogInformation("serial port is open");
+            _logger?.LogInformation("serial port is open");
         }
 
         public RadianceProClient(string portName, int baudRate = 9600, ILogger logger = null) : this(new SerialPort {
@@ -146,16 +151,6 @@ namespace RadiantPi.Lumagen {
             WriteTimeout = 1_000
         }, logger) { }
 
-        //--- Properties ---
-        private bool _verbose;
-        public bool Verbose {
-            get => _verbose;
-            set {
-                LogInformation($"setting Verbose to {value}");
-                _verbose = value;
-            }
-        }
-
         //--- Methods ---
         public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync() {
             var response = await SendAsync("ZQS01", expectResponse: true).ConfigureAwait(false);
@@ -163,14 +158,12 @@ namespace RadiantPi.Lumagen {
             if(data.Length < 4) {
                 throw new InvalidDataException("invalid response");
             }
-            var getDeviceInfoResponse = new GetDeviceInfoResponse {
+            return LogResponse(new GetDeviceInfoResponse {
                 ModelName = data[0],
                 SoftwareRevision = data[1],
                 ModelNumber = data[2],
                 SerialNumber = data[3]
-            };
-            LogResponse(getDeviceInfoResponse);
-            return getDeviceInfoResponse;
+            });
         }
 
         public async Task<GetModeInfoResponse> GetModeInfoAsync() {
@@ -228,14 +221,13 @@ namespace RadiantPi.Lumagen {
         //  Clear-- Clear any onscreen message
 
         public void Dispose() {
-            _logger?.LogDebug("Dispose");
             _serialPort.DataReceived -= SerialDataReceived;
             _mutex.Dispose();
             if(_serialPort.IsOpen) {
+                _logger?.LogInformation("closing serial port");
                 _serialPort.DiscardInBuffer();
                 _serialPort.DiscardOutBuffer();
                 _serialPort.Close();
-                LogInformation("serial port is closed");
             }
             _serialPort.Dispose();
         }
@@ -244,13 +236,13 @@ namespace RadiantPi.Lumagen {
             var buffer = Encoding.UTF8.GetBytes(command);
             await _mutex.WaitAsync().ConfigureAwait(false);
             try {
+                _logger?.LogInformation($"sending: '{Escape(command)}'");
 
                 // send message, await echo response and optional response message
                 if(expectResponse) {
                     TaskCompletionSource<string> responseSource = new();
                     try {
                         _responseReceivedEvent += ReadResponse;
-                        LogInformationEscaped($"sending: '{command}'");
                         await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                         return await responseSource.Task.ConfigureAwait(false);
                     } finally {
@@ -282,7 +274,7 @@ namespace RadiantPi.Lumagen {
 
         private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
             var received = _serialPort.ReadExisting();
-            LogInformationEscaped($"received: '{string.Join("", received.Select(EscapeChar))}'");
+            _logger?.LogTrace($"received: '{Escape(received)}'");
 
             // loop while there is text to process
             while(received.Length > 0) {
@@ -312,7 +304,7 @@ namespace RadiantPi.Lumagen {
 
                     // process response
                     var message = _accumulator.Substring(0, index);
-                    LogInformationEscaped($"dispatching: '{message}'");
+                    _logger?.LogTrace($"data dispatched: '{Escape(message)}'");
                     _responseReceivedEvent?.Invoke(this, message);
 
                     // process remainder of accumulator as newly received text
@@ -320,33 +312,31 @@ namespace RadiantPi.Lumagen {
                     _accumulator = "";
                 }
             }
-
-            // local functions
-            string EscapeChar(char c) => c switch {
-                >= (char)32 and < (char)128 => c.ToString(),
-                '\r' => "\\r",
-                '\n' => "\\n",
-                _ => $"\\u{(int)c:X4}"
-            };
         }
 
-        private void DispatchEvents(object sender, string response) {
+        private void DispatchEvent(object sender, string response) {
+            var prefix = response.Substring(4);
+            if(prefix.StartsWith("!", StringComparison.Ordinal)) {
+                _logger?.LogInformation($"dispatching event: {Escape(prefix)}");
 
-            // parse mode information event
-            const string MODE_INFO_RESPONSE_V1 = "!I21,";
-            const string MODE_INFO_RESPONSE_V2 = "!I22,";
-            const string MODE_INFO_RESPONSE_V3 = "!I23,";
-            const string MODE_INFO_RESPONSE_V4 = "!I24,";
-            if(
-                response.StartsWith(MODE_INFO_RESPONSE_V1, StringComparison.Ordinal)
-                || response.StartsWith(MODE_INFO_RESPONSE_V2, StringComparison.Ordinal)
-                || response.StartsWith(MODE_INFO_RESPONSE_V3, StringComparison.Ordinal)
-                || response.StartsWith(MODE_INFO_RESPONSE_V4, StringComparison.Ordinal)
-            ) {
-                var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length));
-                if(modeInfoResponse is not null) {
-                    LogInformation("event: ModeInfoChanged");
-                    ModeInfoChanged?.Invoke(this, modeInfoResponse);
+                // parse mode information event
+                const string MODE_INFO_RESPONSE_V1 = "!I21";
+                const string MODE_INFO_RESPONSE_V2 = "!I22";
+                const string MODE_INFO_RESPONSE_V3 = "!I23";
+                const string MODE_INFO_RESPONSE_V4 = "!I24";
+                if(
+                    prefix.Equals(MODE_INFO_RESPONSE_V1, StringComparison.Ordinal)
+                    || prefix.Equals(MODE_INFO_RESPONSE_V2, StringComparison.Ordinal)
+                    || prefix.Equals(MODE_INFO_RESPONSE_V3, StringComparison.Ordinal)
+                    || prefix.Equals(MODE_INFO_RESPONSE_V4, StringComparison.Ordinal)
+                ) {
+                    var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length));
+                    if(modeInfoResponse is not null) {
+                        _logger?.LogInformation("matched event: ModeInfoChanged");
+                        ModeInfoChanged?.Invoke(this, modeInfoResponse);
+                    }
+                } else {
+                    _logger?.LogWarning($"unrecognized event: '{Escape(prefix)}'");
                 }
             }
         }
@@ -461,34 +451,20 @@ namespace RadiantPi.Lumagen {
                 info.OutputVerticalResolution = data[13];
                 info.OutputAspectRatio = data[14];
             }
-            LogResponse(info);
-            return info;
+            return LogResponse(info);
         }
 
-        private void LogInformationEscaped(string message) {
-            if(Verbose) {
-                var escapedMessage = string.Join("", message.Select(c => c switch {
-                    >= (char)32 and < (char)127 => ((char)c).ToString(),
-                    '\n' => "\\n",
-                    '\r' => "\\r",
-                    _ => $"\\u{(int)c:X4}"
-                }));
-                LogInformation($"{escapedMessage}");
-            }
-        }
-
-        private void LogResponse(object response) {
-            if(Verbose) {
+        private T LogResponse<T>(T response) {
+            if(_logger?.IsEnabled(LogLevel.Debug) ?? false) {
                 var serializedResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions {
                     WriteIndented = true,
                     Converters = {
                         new JsonStringEnumConverter()
                     }
                 });
-                LogInformation($"response: {serializedResponse}");
+                _logger?.LogDebug($"response: {serializedResponse}");
             }
+            return response;
         }
-
-        private void LogInformation(string message) => _logger?.LogInformation(message);
     }
 }

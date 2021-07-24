@@ -29,26 +29,7 @@ See the [Release Notes](Docs/ReleaseNotes.md) for list of changes and additions.
 
 ## App Configuration
 
-Edit the `appsettings.json` file and update the `"RadiancePro`" section to match your needs.
-```json
-{
-  "RadiancePro": {
-    "PortName": "/dev/ttyUSB0",
-    "BaudRate": 9600,
-    "Mock": false,
-    "Verbose": false
-  }
-}
-```
-
-RadiancePro Settings
-* `PortName`: the name of the COM port the Lumagen RadiancePro is connected to
-* `BaudRate`: (optional) the baud rate at which the application connects over the COM port (default: 9600)
-* `Mock`: (optional) simulate a connected device instead (default: false)
-* `Verbose`: (optional) log communication messages sent between the device and application (default: false)
-
-> **NOTE**: RadiantPi requires the Lumagen RadiancePro to have Echo enabled:
-> * MENU → Other → I/O Setup → RS-232 Setup → Echo → On
+See [Configuration](Docs/Configuration.md) for detailed configuration options.
 
 # License
 
