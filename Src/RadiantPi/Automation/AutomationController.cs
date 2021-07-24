@@ -32,7 +32,7 @@ using RadiantPi.Sony.Cledis;
 
 namespace RadiantPi.Automation {
 
-    public class RadiantPiAutomation : IDisposable {
+    public class AutomationController : IDisposable {
 
         //--- Types ---
         private class Rule {
@@ -52,7 +52,7 @@ namespace RadiantPi.Automation {
         private List<Rule> _rules = new();
 
         //--- Constructors ---
-        public RadiantPiAutomation(IRadiancePro client, ISonyCledis cledisClient, AutomationConfig config, ILogger logger = null) {
+        public AutomationController(IRadiancePro client, ISonyCledis cledisClient, AutomationConfig config, ILogger logger = null) {
             _radianceProClient = client ?? throw new ArgumentNullException(nameof(client));
             _cledisClient = cledisClient ?? throw new ArgumentNullException(nameof(cledisClient));
             _logger = logger;

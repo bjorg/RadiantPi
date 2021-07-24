@@ -55,7 +55,7 @@ namespace RadiantPi {
             var automationFile = _configuration.GetValue<string>("Automation");
             var automationConfig = JsonSerializer.Deserialize<AutomationConfig>(File.ReadAllText(automationFile));
             if(automationConfig is not null) {
-                using var automation = new RadiantPiAutomation(_radianceProClient, _cledisClient, automationConfig, _logger);
+                using var automation = new AutomationController(_radianceProClient, _cledisClient, automationConfig, _logger);
 
                 // initiate client events
                 _logger.LogInformation("get current video mode");
