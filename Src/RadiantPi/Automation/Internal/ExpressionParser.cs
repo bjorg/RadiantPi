@@ -112,7 +112,7 @@ namespace RadiantPi.Automation.Internal {
         private static readonly ParameterExpression LambdaRecordParameter = Expression.Parameter(typeof(TRecord), "record");
         private static readonly ParameterExpression LambdaConditionsParameter = Expression.Parameter(typeof(Dictionary<string, bool>), "conditions");
         private static readonly MethodInfo StringCompareMethod = typeof(string).GetMethod("Compare", new[] { typeof(string), typeof(string), typeof(StringComparison) });
-        private static readonly MethodInfo GetConditionValueMethod = typeof(ExpressionParser<TRecord>).GetMethod("GetConditionValue", new[] { typeof(Dictionary<string, bool>), typeof(string) });
+        private static readonly MethodInfo GetConditionValueMethod = typeof(ExpressionParser<TRecord>).GetMethod("GetConditionValue", BindingFlags.NonPublic | BindingFlags.Static);
         private static readonly MethodInfo ObjectToStringMethod = typeof(object).GetMethod("ToString");
 
         //--- Class Methods ---
