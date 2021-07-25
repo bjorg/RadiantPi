@@ -315,7 +315,7 @@ namespace RadiantPi.Lumagen {
         }
 
         private void DispatchEvent(object sender, string response) {
-            var prefix = response.Substring(4);
+            var prefix = response.Substring(0, 4);
             if(prefix.StartsWith("!", StringComparison.Ordinal)) {
                 _logger?.LogInformation($"dispatching event: {Escape(prefix)}");
 
@@ -330,7 +330,7 @@ namespace RadiantPi.Lumagen {
                     || prefix.Equals(MODE_INFO_RESPONSE_V3, StringComparison.Ordinal)
                     || prefix.Equals(MODE_INFO_RESPONSE_V4, StringComparison.Ordinal)
                 ) {
-                    var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length));
+                    var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length + 1));
                     if(modeInfoResponse is not null) {
                         _logger?.LogInformation("matched event: ModeInfoChanged");
                         ModeInfoChanged?.Invoke(this, modeInfoResponse);
