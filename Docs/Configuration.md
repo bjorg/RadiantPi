@@ -59,6 +59,7 @@ Add a `SonyCledis` section to the _appsettings.json_ file.
 > TODO: describe automation commands
 > * `RadiancePro.Send`
 > * `SonyCledis.PictureMode`
+> * `SonyCledis.Input`
 > * `Shell.Run`
 > * `Wait`
 

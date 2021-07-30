@@ -47,6 +47,9 @@ namespace RadiantPi.Automation.Model {
         [JsonPropertyName("SonyCledis.PictureMode")]
         public string SonyCledisPictureMode { get; set; }
 
+        [JsonPropertyName("SonyCledis.Input")]
+        public string SonyCledisInput { get; set; }
+
         [JsonPropertyName("Shell.Run")]
         public ShellRunAction ShellRun { get; set; }
     }

@@ -245,6 +245,9 @@ namespace RadiantPi.Automation {
                     } else if(action.SonyCledisPictureMode is not null) {
                         _logger?.LogDebug($"SonyCledis.PictureMode: {action.SonyCledisPictureMode}");
                         await _cledisClient.SetPictureModeAsync(Enum.Parse<SonyCledisPictureMode>(action.SonyCledisPictureMode)).ConfigureAwait(false);
+                    } else if(action.SonyCledisInput is not null) {
+                        _logger?.LogDebug($"SonyCledis.Input: {action.SonyCledisInput}");
+                        await _cledisClient.SetInputAsync(Enum.Parse<SonyCledisInput>(action.SonyCledisInput)).ConfigureAwait(false);
                     } else if(action.ShellRun is not null) {
                         _logger?.LogDebug($"Shell.Run: {action.ShellRun}");
                         if(action.ShellRun.WaitUntilFinished ?? true) {
