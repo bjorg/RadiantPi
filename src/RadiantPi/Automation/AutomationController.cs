@@ -49,6 +49,7 @@ namespace RadiantPi.Automation {
 
             //--- Properties ---
             public string Name { get; set; }
+            public bool Enabled { get; set; } = true;
             public string ConditionDefinition { get; set; }
             public ExpressionParser<ModeInfoDetails>.ExpressionDelegate ConditionFunction { get; set; }
             public IEnumerable<ModelChangedAction> Actions { get; set; }
@@ -207,7 +208,7 @@ namespace RadiantPi.Automation {
             _logger?.LogTrace($"changed event properties: {DependenciesToString(changed)}");
 
             // evaluate all rules
-            foreach(var rule in _rules) {
+            foreach(var rule in _rules.Where(rule => rule.Enabled)) {
 
                 // only evaluate a rule if it depends on changed property
                 if(!rule.Dependencies.Any(dependency => changed.Contains(dependency))) {
