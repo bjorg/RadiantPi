@@ -52,13 +52,15 @@ namespace RadiantPi.Automation.Internal {
             select Expression.Constant(value);
 
         private static readonly Parser<Expression> RecordPropertyReference =
-            from name in Parse.Letter.AtLeastOnce().Text()
-            select MakeRecordPropertyReference(name);
+            from firstLetter in Parse.Letter
+            from remainingLetters in Parse.LetterOrDigit.Many().Text()
+            select MakeRecordPropertyReference(firstLetter + remainingLetters);
 
         private static readonly Parser<Expression> ConditionReference =
             from _ in Parse.Char('$')
-            from name in Parse.Letter.AtLeastOnce().Text()
-            select MakeConditionReference("$" + name);
+            from firstLetter in Parse.Letter
+            from remainingLetters in Parse.LetterOrDigit.Many().Text()
+            select MakeConditionReference("$" + firstLetter + remainingLetters);
 
         private static readonly Parser<Expression> BoolTrueLiteral =
             from _ in Parse.String("true")

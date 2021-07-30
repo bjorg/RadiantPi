@@ -48,8 +48,8 @@ namespace RadiantPi.Lumagen.Model {
 
         //--- Properties ---
         public RadianceProInputStatus InputStatus { get; set; }
-        public uint VirtualInputSelected { get; set; }
-        public uint PhysicalInputSelected { get; set; }
+        public int VirtualInputSelected { get; set; }
+        public int PhysicalInputSelected { get; set; }
 
         // Source Properties
         public string SourceVerticalRate { get; set; }

@@ -355,8 +355,8 @@ namespace RadiantPi.Lumagen {
             if(data.Length >= 21) {
 
                 // v3 data fields
-                info.VirtualInputSelected = uint.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture);
-                info.PhysicalInputSelected = uint.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture);
+                info.VirtualInputSelected = int.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture);
+                info.PhysicalInputSelected = int.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture);
             }
             if(data.Length >= 19) {
 
