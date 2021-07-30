@@ -3,12 +3,14 @@
     "$FitHeight": "DetectedAspectRatio < 178",
     "$FitWidth": "(DetectedAspectRatio >= 178) && (DetectedAspectRatio <= 200)",
     "$FitNative": "DetectedAspectRatio > 200",
-    "$HDR": "SourceDynamicRange == 'HDR'"
+    "$HDR": "SourceDynamicRange == 'HDR'",
+    "$Is3D": "(Source3DMode != 'Undefined') && (Source3DMode == 'Off')",
+    "$IsMovieSource": "(PhysicalInputSelected == 1) || (PhysicalInputSelected == 3) || (PhysicalInputSelected == 5) || (PhysicalInputSelected == 7)"
   },
   "Rules": [
     {
       "Name": "SwitchToFitHeight",
-      "Condition": "$FitHeight",
+      "Condition": "$IsMovieSource && !$Is3D && $FitHeight",
       "Actions": [
         {
           "RadiancePro.Send": "c"
@@ -17,7 +19,7 @@
     },
     {
       "Name": "SwitchToFitWidth",
-      "Condition": "$FitWidth",
+      "Condition": "$IsMovieSource && !$Is3D && $FitWidth",
       "Actions": [
         {
           "RadiancePro.Send": "b"
@@ -26,7 +28,7 @@
     },
     {
       "Name": "SwitchToNative",
-      "Condition": "$FitNative",
+      "Condition": "$IsMovieSource && !$Is3D && $FitNative",
       "Actions": [
         {
           "RadiancePro.Send": "a"
@@ -35,7 +37,7 @@
     },
     {
       "Name": "SwitchToSDR",
-      "Condition": "!$HDR",
+      "Condition": "!$Is3D && !$HDR",
       "Actions": [
         {
           "SonyCledis.PictureMode": "Mode1"
@@ -44,7 +46,7 @@
     },
     {
       "Name": "SwitchToHDR",
-      "Condition": "$HDR",
+      "Condition": "!$Is3D && $HDR",
       "Actions": [
         {
           "SonyCledis.PictureMode": "Mode2"
