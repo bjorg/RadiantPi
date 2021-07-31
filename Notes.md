@@ -2,8 +2,6 @@
 
 * Lumagen always displays 2.20 at the bottom of the screen on memory change
 
-* how to set stick resolution switches on memory click?
-
 Log to CloudWatch
 * https://github.com/aws/aws-logging-dotnet
 

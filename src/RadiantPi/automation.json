@@ -8,59 +8,18 @@
     "$IsGameSource": "(PhysicalInputSelected == 2) || (PhysicalInputSelected == 4) || (PhysicalInputSelected == 6) || (PhysicalInputSelected == 8)"
   },
   "Rules": [
+
     {
-      "Name": "SwitchToFitHeight",
-      "Condition": "!$IsGameSource && !$Is3D && $FitHeight",
-      "Actions": [
-        {
-          "RadiancePro.Send": "c"
-        }
-      ]
-    },
-    {
-      "Name": "SwitchToFitWidth",
-      "Condition": "!$IsGameSource && !$Is3D && $FitWidth",
-      "Actions": [
-        {
-          "RadiancePro.Send": "b"
-        }
-      ]
-    },
-    {
-      "Name": "SwitchToNative",
-      "Condition": "!$IsGameSource && !$Is3D && $FitNative",
-      "Actions": [
-        {
-          "RadiancePro.Send": "a"
-        }
-      ]
-    },
-    {
-      "Name": "SwitchToSDR",
-      "Condition": "!$Is3D && !$HDR",
+      "Name": "Source2D",
+      "Condition": "!$Is3D",
       "Actions": [
         {
           "SonyCledis.Input": "Hdmi1"
-        },
-        {
-          "SonyCledis.PictureMode": "Mode1"
         }
       ]
     },
     {
-      "Name": "SwitchToHDR",
-      "Condition": "!$Is3D && $HDR",
-      "Actions": [
-        {
-          "SonyCledis.Input": "Hdmi1"
-        },
-        {
-          "SonyCledis.PictureMode": "Mode2"
-        }
-      ]
-    },
-    {
-      "Name": "SwitchTo3D",
+      "Name": "Source3D",
       "Condition": "$Is3D",
       "Actions": [
         {
@@ -68,6 +27,58 @@
         },
         {
           "SonyCledis.PictureMode": "Mode3"
+        },
+        {
+          "RadiancePro.Send": "a"
+        }
+      ]
+    },
+
+
+    {
+      "Name": "SourceSDR",
+      "Condition": "!$Is3D && !$HDR",
+      "Actions": [
+        {
+          "SonyCledis.PictureMode": "Mode1"
+        }
+      ]
+    },
+    {
+      "Name": "SourceHDR",
+      "Condition": "!$Is3D && $HDR",
+      "Actions": [
+        {
+          "SonyCledis.PictureMode": "Mode2"
+        }
+      ]
+    },
+
+
+    {
+      "Name": "SourceFitHeight",
+      "Condition": "!$Is3D && !$IsGameSource && $FitHeight",
+      "Actions": [
+        {
+          "RadiancePro.Send": "c"
+        }
+      ]
+    },
+    {
+      "Name": "SourceFitWidth",
+      "Condition": "!$Is3D && !$IsGameSource && $FitWidth",
+      "Actions": [
+        {
+          "RadiancePro.Send": "b"
+        }
+      ]
+    },
+    {
+      "Name": "SourceNative",
+      "Condition": "!$Is3D && !$IsGameSource && $FitNative",
+      "Actions": [
+        {
+          "RadiancePro.Send": "a"
         }
       ]
     }
