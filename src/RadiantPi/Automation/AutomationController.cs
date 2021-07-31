@@ -30,6 +30,7 @@ using RadiantPi.Automation.Model;
 using RadiantPi.Lumagen;
 using RadiantPi.Lumagen.Model;
 using RadiantPi.Sony.Cledis;
+using RadiantPi.Sony.Cledis.Exceptions;
 
 namespace RadiantPi.Automation {
 
@@ -245,10 +246,18 @@ namespace RadiantPi.Automation {
                         await _radianceProClient.SendAsync(Unescape(action.RadianceProSend), expectResponse: false).ConfigureAwait(false);
                     } else if(action.SonyCledisPictureMode is not null) {
                         _logger?.LogDebug($"SonyCledis.PictureMode: {action.SonyCledisPictureMode}");
-                        await _cledisClient.SetPictureModeAsync(Enum.Parse<SonyCledisPictureMode>(action.SonyCledisPictureMode)).ConfigureAwait(false);
+                        try {
+                            await _cledisClient.SetPictureModeAsync(Enum.Parse<SonyCledisPictureMode>(action.SonyCledisPictureMode)).ConfigureAwait(false);
+                        } catch(SonyCledisCommandInactiveException) {
+                            _logger?.LogDebug($"Sony Cledis is turned off");
+                        }
                     } else if(action.SonyCledisInput is not null) {
                         _logger?.LogDebug($"SonyCledis.Input: {action.SonyCledisInput}");
-                        await _cledisClient.SetInputAsync(Enum.Parse<SonyCledisInput>(action.SonyCledisInput)).ConfigureAwait(false);
+                        try {
+                            await _cledisClient.SetInputAsync(Enum.Parse<SonyCledisInput>(action.SonyCledisInput)).ConfigureAwait(false);
+                        } catch(SonyCledisCommandInactiveException) {
+                            _logger?.LogDebug($"Sony Cledis is turned off");
+                        }
                     } else if(action.ShellRun is not null) {
                         _logger?.LogDebug($"Shell.Run: {action.ShellRun}");
                         if(action.ShellRun.WaitUntilFinished ?? true) {
