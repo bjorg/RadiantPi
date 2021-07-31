@@ -30,6 +30,7 @@ using RadiantPi.Automation.Model;
 using RadiantPi.Lumagen;
 using RadiantPi.Lumagen.Model;
 using RadiantPi.Sony.Cledis;
+using RadiantPi.Sony.Cledis.Exceptions;
 
 namespace RadiantPi.Automation {
 
