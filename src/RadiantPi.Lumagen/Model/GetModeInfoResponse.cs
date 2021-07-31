@@ -24,7 +24,7 @@ namespace RadiantPi.Lumagen.Model {
         // Full information query('Fullv4' for unsolicited status output):
         // Response= "!I23,M,RRR,VVVV,D,X,AAA,SSS,Y,T,WWWW,C,B,PPP,QQQQ,ZZZ,E,F,G,H,II,KK":
         // 00: M = Input status (0=no source, 1=active video, 2=internal pattern)
-        // 01: RRR = Source vertical rate (e.g.059for 59.94, 060 for 60.00)
+        // 01: RRR = Source vertical rate (e.g.059 for 59.94, 060 for 60.00)
         // 02: VVVV = Source vertical resolution (e.g. 1080 for 1080p)
         // 03: D = Source 3D mode (0,1,2,4,8)
         // 04: X = Active input config number for current input resolution
@@ -41,9 +41,9 @@ namespace RadiantPi.Lumagen.Model {
         // 15: E = Output Colorspace (0,1,2,3 for 601, 709, 2020, 2100 respectively)
         // 16: F = Source dynamic range (0 = SDR, 1= HDR)
         // 17: G = Source Mode ("i" = interlaced, "p"= progressive, "-" = no Input)
-        // 18: H = Output Mode. ("I" = interlaced, "P" = progressive)
-        // 19: II = VirtualInput selected by remote/RS232 command (1 to 19)
-        // 20: KK = Physical Input selectedfor current virtual input (1 to 19)
+        // 18: H = Output Mode ("I" = interlaced, "P" = progressive)
+        // 19: II = Virtual Input selected by remote/RS232 command (1 to 19)
+        // 20: KK = Physical Input selected for current virtual input (1 to 19)
         // 20: JJJ = Detected input aspect, .ie 240 for 2.40
 
         //--- Properties ---
@@ -66,7 +66,7 @@ namespace RadiantPi.Lumagen.Model {
         // Output Properties
         public bool OutputNonLinearStretchActive { get; set; }
         public RadiancePro3D Output3DMode { get; set; }
-        public ushort OutputEnabled { get; set; }
+        public int OutputEnabled { get; set; }
         public RadianceProCms OutputCms { get; set; }
         public RadianceProStyle OutputStyle { get; set; }
         public string OutputVerticalRate { get; set; }

@@ -51,10 +51,10 @@ namespace RadiantPi.Automation.Internal {
             from _2 in Parse.Char('\'')
             select Expression.Constant(value);
 
-        private static readonly Parser<Expression> RecordPropertyReference =
+        private static readonly Parser<Expression> EventPropertyReference =
             from firstLetter in Parse.Letter
             from remainingLetters in Parse.LetterOrDigit.Many().Text()
-            select MakeRecordPropertyReference(firstLetter + remainingLetters);
+            select MakeEventPropertyReference(firstLetter + remainingLetters);
 
         private static readonly Parser<Expression> ConditionReference =
             from _ in Parse.Char('$')
@@ -86,7 +86,7 @@ namespace RadiantPi.Automation.Internal {
                 .XOr(BoolTrueLiteral)
                 .XOr(BoolFalseLiteral)
                 .XOr(ConditionReference)
-                .XOr(RecordPropertyReference);
+                .XOr(EventPropertyReference);
 
         private static readonly Parser<Expression> Operand =
             (
@@ -111,7 +111,7 @@ namespace RadiantPi.Automation.Internal {
             from body in Expr.End()
             select body;
 
-        private static readonly ParameterExpression LambdaRecordParameter = Expression.Parameter(typeof(TRecord), "record");
+        private static readonly ParameterExpression LambdaEventParameter = Expression.Parameter(typeof(TRecord), "event");
         private static readonly ParameterExpression LambdaConditionsParameter = Expression.Parameter(typeof(Dictionary<string, bool>), "conditions");
         private static readonly MethodInfo StringCompareMethod = typeof(string).GetMethod("Compare", new[] { typeof(string), typeof(string), typeof(StringComparison) });
         private static readonly MethodInfo GetConditionValueMethod = typeof(ExpressionParser<TRecord>).GetMethod("GetConditionValue", BindingFlags.NonPublic | BindingFlags.Static);
@@ -119,7 +119,7 @@ namespace RadiantPi.Automation.Internal {
 
         //--- Class Methods ---
         public static Expression<ExpressionDelegate> ParseExpression(string name, string text, out HashSet<string> dependencies) {
-            var result = Expression.Lambda<ExpressionDelegate>(Body.Parse(text), name, new[] { LambdaRecordParameter, LambdaConditionsParameter });
+            var result = Expression.Lambda<ExpressionDelegate>(Body.Parse(text), name, new[] { LambdaEventParameter, LambdaConditionsParameter });
             dependencies = _dependencies;
             _dependencies = new();
             return result;
@@ -127,10 +127,10 @@ namespace RadiantPi.Automation.Internal {
 
         private static Parser<ExpressionType> Operator(string op, ExpressionType opType) => Parse.String(op).Token().Return(opType);
 
-        private static Expression MakeRecordPropertyReference(string name) {
+        private static Expression MakeEventPropertyReference(string name) {
             _dependencies.Add(name);
             var property = RecordType.GetProperty(name) ?? throw new ExpressionParserPropertyNotFoundException(name);
-            Expression result = Expression.Property(LambdaRecordParameter, property);
+            Expression result = Expression.Property(LambdaEventParameter, property);
             if(property.PropertyType.IsEnum) {
                 result = Expression.Call(result, ObjectToStringMethod);
             }

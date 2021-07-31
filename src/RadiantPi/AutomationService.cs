@@ -28,6 +28,7 @@ using RadiantPi.Automation.Model;
 using RadiantPi.Sony.Cledis;
 using System.Text.Json;
 using System.IO;
+using System.Text.Json.Serialization;
 
 namespace RadiantPi {
 
@@ -53,7 +54,12 @@ namespace RadiantPi {
 
             // initialize client automation
             var automationFile = _configuration.GetValue<string>("Automation");
-            var automationConfig = JsonSerializer.Deserialize<AutomationConfig>(File.ReadAllText(automationFile));
+            var jsonOptions = new JsonSerializerOptions {
+                Converters = {
+                    new JsonStringEnumConverter()
+                }
+            };
+            var automationConfig = JsonSerializer.Deserialize<AutomationConfig>(File.ReadAllText(automationFile), jsonOptions);
             if(automationConfig is not null) {
                 using var automation = new AutomationController(_radianceProClient, _cledisClient, automationConfig, _logger);
 

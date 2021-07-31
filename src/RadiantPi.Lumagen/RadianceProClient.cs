@@ -424,7 +424,7 @@ namespace RadiantPi.Lumagen {
                     "8" => RadiancePro3D.SideBySide,
                     string invalid => throw new InvalidDataException($"invalid source 3D mode: {invalid}")
                 };
-                info.OutputEnabled = ushort.Parse(data[9], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+                info.OutputEnabled = int.Parse(data[9], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
                 info.OutputCms = data[10] switch {
                     "0" => RadianceProCms.Cms0,
                     "1" => RadianceProCms.Cms1,

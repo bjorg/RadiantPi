@@ -1,86 +1,88 @@
 {
-  "Conditions": {
-    "$FitHeight": "DetectedAspectRatio < 178",
-    "$FitWidth": "(DetectedAspectRatio >= 178) && (DetectedAspectRatio <= 200)",
-    "$FitNative": "DetectedAspectRatio > 200",
-    "$HDR": "SourceDynamicRange == 'HDR'",
-    "$Is3D": "(Source3DMode != 'Undefined') && (Source3DMode != 'Off')",
-    "$IsGameSource": "(PhysicalInputSelected == 2) || (PhysicalInputSelected == 4) || (PhysicalInputSelected == 6) || (PhysicalInputSelected == 8)"
-  },
-  "Rules": [
+  "RadiancePro": {
+    "Conditions": {
+      "$FitHeight": "DetectedAspectRatio < 178",
+      "$FitWidth": "(DetectedAspectRatio >= 178) && (DetectedAspectRatio <= 200)",
+      "$FitNative": "DetectedAspectRatio > 200",
+      "$HDR": "SourceDynamicRange == 'HDR'",
+      "$Is3D": "(Source3DMode != 'Undefined') && (Source3DMode != 'Off')",
+      "$IsGameSource": "(PhysicalInputSelected == 2) || (PhysicalInputSelected == 4) || (PhysicalInputSelected == 6) || (PhysicalInputSelected == 8)"
+    },
+    "Rules": [
 
-    {
-      "Name": "Source2D",
-      "Condition": "!$Is3D",
-      "Actions": [
-        {
-          "SonyCledis.Input": "Hdmi1"
-        }
-      ]
-    },
-    {
-      "Name": "Source3D",
-      "Condition": "$Is3D",
-      "Actions": [
-        {
-          "SonyCledis.Input": "Hdmi2"
-        },
-        {
-          "SonyCledis.PictureMode": "Mode3"
-        },
-        {
-          "RadiancePro.Send": "a"
-        }
-      ]
-    },
-
-
-    {
-      "Name": "SourceSDR",
-      "Condition": "!$Is3D && !$HDR",
-      "Actions": [
-        {
-          "SonyCledis.PictureMode": "Mode1"
-        }
-      ]
-    },
-    {
-      "Name": "SourceHDR",
-      "Condition": "!$Is3D && $HDR",
-      "Actions": [
-        {
-          "SonyCledis.PictureMode": "Mode2"
-        }
-      ]
-    },
+      {
+        "Name": "Source2D",
+        "Condition": "!$Is3D",
+        "Actions": [
+          {
+            "SonyCledis.Input": "Hdmi1"
+          }
+        ]
+      },
+      {
+        "Name": "Source3D",
+        "Condition": "$Is3D",
+        "Actions": [
+          {
+            "SonyCledis.Input": "Hdmi2"
+          },
+          {
+            "SonyCledis.PictureMode": "Mode3"
+          },
+          {
+            "RadiancePro.Send": "a"
+          }
+        ]
+      },
 
 
-    {
-      "Name": "SourceFitHeight",
-      "Condition": "!$Is3D && !$IsGameSource && $FitHeight",
-      "Actions": [
-        {
-          "RadiancePro.Send": "c"
-        }
-      ]
-    },
-    {
-      "Name": "SourceFitWidth",
-      "Condition": "!$Is3D && !$IsGameSource && $FitWidth",
-      "Actions": [
-        {
-          "RadiancePro.Send": "b"
-        }
-      ]
-    },
-    {
-      "Name": "SourceNative",
-      "Condition": "!$Is3D && !$IsGameSource && $FitNative",
-      "Actions": [
-        {
-          "RadiancePro.Send": "a"
-        }
-      ]
-    }
-  ]
+      {
+        "Name": "SourceSDR",
+        "Condition": "!$Is3D && !$HDR",
+        "Actions": [
+          {
+            "SonyCledis.PictureMode": "Mode1"
+          }
+        ]
+      },
+      {
+        "Name": "SourceHDR",
+        "Condition": "!$Is3D && $HDR",
+        "Actions": [
+          {
+            "SonyCledis.PictureMode": "Mode2"
+          }
+        ]
+      },
+
+
+      {
+        "Name": "SourceFitHeight",
+        "Condition": "!$Is3D && !$IsGameSource && $FitHeight",
+        "Actions": [
+          {
+            "RadiancePro.Send": "c"
+          }
+        ]
+      },
+      {
+        "Name": "SourceFitWidth",
+        "Condition": "!$Is3D && !$IsGameSource && $FitWidth",
+        "Actions": [
+          {
+            "RadiancePro.Send": "b"
+          }
+        ]
+      },
+      {
+        "Name": "SourceNative",
+        "Condition": "!$Is3D && !$IsGameSource && $FitNative",
+        "Actions": [
+          {
+            "RadiancePro.Send": "a"
+          }
+        ]
+      }
+    ]
+  }
 }

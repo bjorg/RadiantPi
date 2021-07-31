@@ -50,10 +50,10 @@ namespace RadiantPi.Automation {
 
             //--- Properties ---
             public string Name { get; set; }
-            public bool Enabled { get; set; } = true;
+            public bool Enabled { get; set; }
             public string ConditionDefinition { get; set; }
             public ExpressionParser<ModeInfoDetails>.ExpressionDelegate ConditionFunction { get; set; }
-            public IEnumerable<ModelChangedAction> Actions { get; set; }
+            public IEnumerable<AutomationAction> Actions { get; set; }
             public HashSet<string> Dependencies { get; set; }
         }
 
@@ -92,8 +92,8 @@ namespace RadiantPi.Automation {
             _logger = logger;
 
             // process configuration
-            CompileConditions(config?.Conditions);
-            CompileRules(config?.Rules);
+            CompileConditions(config?.RadiancePro?.Conditions);
+            CompileRules(config?.RadiancePro?.Rules);
 
             // subscribe to mode-changed events
             if(_rules.Any()) {
@@ -132,7 +132,7 @@ namespace RadiantPi.Automation {
             }
         }
 
-        private void CompileRules(List<ModeChangedRule> rules) {
+        private void CompileRules(List<AutomationRule> rules) {
             if(!(rules?.Any() ?? false)) {
                 return;
             }
@@ -172,6 +172,7 @@ namespace RadiantPi.Automation {
                     _logger?.LogDebug($"dependencices: {DependenciesToString(flattenedDependencies)}");
                     _rules.Add(new() {
                         Name = ruleName,
+                        Enabled = rule.Enabled,
                         ConditionDefinition = rule.Condition,
                         ConditionFunction = (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile(),
                         Actions = rule.Actions,
@@ -234,7 +235,7 @@ namespace RadiantPi.Automation {
             }
         }
 
-        private async Task DispatchActions(string ruleName, IEnumerable<ModelChangedAction> actions) {
+        private async Task DispatchActions(string ruleName, IEnumerable<AutomationAction> actions) {
             if(actions?.Any() ?? false) {
                 var actionIndex = 0;
                 foreach(var action in actions) {
@@ -247,14 +248,14 @@ namespace RadiantPi.Automation {
                     } else if(action.SonyCledisPictureMode is not null) {
                         _logger?.LogDebug($"SonyCledis.PictureMode: {action.SonyCledisPictureMode}");
                         try {
-                            await _cledisClient.SetPictureModeAsync(Enum.Parse<SonyCledisPictureMode>(action.SonyCledisPictureMode)).ConfigureAwait(false);
+                            await _cledisClient.SetPictureModeAsync(action.SonyCledisPictureMode.Value).ConfigureAwait(false);
                         } catch(SonyCledisCommandInactiveException) {
                             _logger?.LogDebug($"Sony Cledis is turned off");
                         }
                     } else if(action.SonyCledisInput is not null) {
                         _logger?.LogDebug($"SonyCledis.Input: {action.SonyCledisInput}");
                         try {
-                            await _cledisClient.SetInputAsync(Enum.Parse<SonyCledisInput>(action.SonyCledisInput)).ConfigureAwait(false);
+                            await _cledisClient.SetInputAsync(action.SonyCledisInput.Value).ConfigureAwait(false);
                         } catch(SonyCledisCommandInactiveException) {
                             _logger?.LogDebug($"Sony Cledis is turned off");
                         }

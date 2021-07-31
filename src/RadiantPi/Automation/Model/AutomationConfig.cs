@@ -18,25 +18,33 @@
 
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using RadiantPi.Sony.Cledis;
 
 namespace RadiantPi.Automation.Model {
 
     public sealed class AutomationConfig {
 
         //--- Properties ---
-        public Dictionary<string, string> Conditions { get; set; } = new();
-        public List<ModeChangedRule> Rules { get; set; } = new();
+        public AutomationDevice RadiancePro { get; set; }
     }
 
-    public sealed class ModeChangedRule {
+    public sealed class AutomationDevice {
+
+        //--- Properties ---
+        public Dictionary<string, string> Conditions { get; set; } = new();
+        public List<AutomationRule> Rules { get; set; } = new();
+    }
+
+    public sealed class AutomationRule {
 
         //--- Properties ---
         public string Name { get; set; }
+        public bool Enabled { get; set; } = true;
         public string Condition { get; set; }
-        public List<ModelChangedAction> Actions { get; set; }
+        public List<AutomationAction> Actions { get; set; }
     }
 
-    public sealed class ModelChangedAction {
+    public sealed class AutomationAction {
 
         //--- Properties ---
         public double? Wait { get; set; }
@@ -45,10 +53,10 @@ namespace RadiantPi.Automation.Model {
         public string RadianceProSend { get; set; }
 
         [JsonPropertyName("SonyCledis.PictureMode")]
-        public string SonyCledisPictureMode { get; set; }
+        public SonyCledisPictureMode? SonyCledisPictureMode { get; set; }
 
         [JsonPropertyName("SonyCledis.Input")]
-        public string SonyCledisInput { get; set; }
+        public SonyCledisInput? SonyCledisInput { get; set; }
 
         [JsonPropertyName("Shell.Run")]
         public ShellRunAction ShellRun { get; set; }

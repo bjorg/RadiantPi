@@ -30,7 +30,7 @@ See the [Release Notes](Docs/ReleaseNotes.md) for list of changes and additions.
 ## Documentation
 
 * See [Configuration](Docs/Configuration.md) for app configuration settings.
-* See [Automation](Docs/Logging.md) for automation rules and commands.
+* See [Automation](Docs/Automation.md) for automation rules and commands.
 * See [Logging](Docs/Logging.md) for app logging options.
 
 # License
