@@ -4,7 +4,7 @@
     "$FitWidth": "(DetectedAspectRatio >= 178) && (DetectedAspectRatio <= 200)",
     "$FitNative": "DetectedAspectRatio > 200",
     "$HDR": "SourceDynamicRange == 'HDR'",
-    "$Is3D": "(Source3DMode != 'Undefined') && (Source3DMode == 'Off')",
+    "$Is3D": "(Source3DMode != 'Undefined') && (Source3DMode != 'Off')",
     "$IsGameSource": "(PhysicalInputSelected == 2) || (PhysicalInputSelected == 4) || (PhysicalInputSelected == 6) || (PhysicalInputSelected == 8)"
   },
   "Rules": [
