@@ -1,31 +1,33 @@
 # Configuration
 
-> **NOTE**: RadiantPi requires the Lumagen RadiancePro to have Echo enabled:
-> * MENU → Other → I/O Setup → RS-232 Setup → Echo → On
+## Setting up Lumagen RadiancePro
+
+_RadiantPi_ requires the Lumagen RadiancePro to have Echo enabled:
+* MENU → Other → I/O Setup → RS-232 Setup → Echo → On
 
 ## Setting up the _appsettings.json_ file
 
-The _appsettings.json_ file contains the startup configuration for _RadiantPi_. Here you set the location of your Lumagen RadiancePro, and any additional components.
+The _appsettings.json_ file contains the startup configuration for _RadiantPi_. Here you set the connection details of your Lumagen RadiancePro, as well as any other components.
 
-You can configure an optional automation file that reacts to reported mode changes by the RadiancePro.
+You can also configure an optional automation file that reacts to reported mode changes by the RadiancePro.
 
+### Sample
+The following sample _appsettings.json_ file contains a configuration for a RadiancePro, Sony Crystal LED device, and an automation definition.
 ```json
 {
-  "Urls": "http://*:5000",
-  "AllowedHosts": "*",
-
   "RadiancePro": {
-    "PortName": "/dev/ttyUSB0",
-    "Mock": true
+    "PortName": "/dev/ttyUSB0"
   },
 
   "SonyCledis": {
-    "Host": "192.168.1.190",
-    "Mock": true
+    "Host": "192.168.0.72",
+    "Port": 53595
   },
 
   "Automation": "automation.json",
 
+  "Urls": "http://*:5000",
+  "AllowedHosts": "*",
   "Logging": {
     "LogLevel": {
       "Default": "Information",
@@ -40,79 +42,30 @@ You can configure an optional automation file that reacts to reported mode chang
 
 ### RadiancePro Settings
 
-Add a `RadiancePro` section to the _appsettings.json_ file.
+Add a `RadiancePro` entry to the _appsettings.json_ file.
 
 * `PortName`: the name of the COM port the Lumagen RadiancePro is connected to
 * `BaudRate`: (optional) the baud rate at which the application connects over the COM port (default: 9600)
-* `Mock`: (optional) simulate a connected device instead (default: false)
+* `Mock`: (optional) simulate a connected device (default: false)
 
 ### Sony Crystal LED Settings
 
-Add a `SonyCledis` section to the _appsettings.json_ file.
+Add a `SonyCledis` entry to the _appsettings.json_ file.
 
 * `Host`: the IP address of the Sony Crystal LED controller
 * `Port`: (optional) the telnet port on the Sony Crystal LED controller (default: 53595)
-* `Mock`: (optional) simulate a connected device instead (default: false)
+* `Mock`: (optional) simulate a connected device (default: false)
 
 ## Automation Configuration
 
-> TODO: describe automation commands
-> * `RadiancePro.Send`
-> * `SonyCledis.PictureMode`
-> * `SonyCledis.Input`
-> * `Shell.Run`
-> * `Wait`
+Add a `Automation` entry to the _appsettings.json_ file that specifies the location of the JSON automation file.
 
-## Logging Configuration
+See [Automation documentation](Automation.md) for more details about the JSON automation file.
 
-The various automation clients have different logging levels to show additional details, which can be essential when tracking down an issue.
+## App Configuration
 
-Adjust the logging level for each client in the _appsettings.Development.json_ file.
+* `Urls`: lists the web protocol and network interfaces the app responds to. By default, the app responds to HTTP on all interfaces over port 5000
+* `AllowedHosts`: lists which host names are allowed. Dy default any host name is allowed
+* `Logging`: defines the level of logging emitted by the app; see [Logging](Logging.md) for additional app-specific settings
 
-```json
-{
-  "DetailedErrors": true,
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft": "Warning",
-      "Microsoft.Hosting.Lifetime": "Information",
-      "RadiantPi.Lumagen.RadianceProClient": "Debug",
-      "RadiantPi.Sony.Cledis.SonyCledisClient": "Debug",
-      "RadiantPi.Automation.AutomationController": "Debug"
-    }
-  }
-}
-```
-
-### `RadiantPi.Lumagen.RadianceProClient`
-
-* `Information`
-    * log high-level client activity
-* `Debug`
-    * log deserialized responses
-* `Trace`
-    * log data received over serial port
-    * log internal event dispatching
-
-### `RadiantPi.Sony.Cledis.SonyCledisClient`
-
-* `Information`
-    * log high-level client activity
-* `Debug`
-    * log responses
-* `Trace`
-    * log data received over telnet socket
-
-### `RadiantPi.Automation.AutomationController`
-
-* `Information`
-    *
-* `Debug`
-    * log compiled rules with dependencies
-    * log event details
-    * log dispatched actions
-    * log shell command output
-* `Trace`
-    * log evaluated conditions
-    * log dependency tracking
+Explore the [ASP.NET documentation](https://docs.microsoft.com/en-us/aspnet/core/?view=aspnetcore-5.0) to find about additional _RadianPi_ settings.

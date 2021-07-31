@@ -1,10 +1,11 @@
 # Release Notes
 
-## v0.2 (TBD)
+## v0.2 (2021-07-31)
 
 ### Features
 
-* Added interface for showing mode information including source and output using "Full v3" format.
+* Added interface for showing mode information including source and output using "Full v4" format.
+* Added automation rules and actions.
 
 ### Fixes
 
