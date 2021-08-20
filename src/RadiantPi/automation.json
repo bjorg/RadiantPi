@@ -6,7 +6,8 @@
       "$FitNative": "DetectedAspectRatio > 200",
       "$HDR": "SourceDynamicRange == 'HDR'",
       "$Is3D": "(Source3DMode != 'Undefined') && (Source3DMode != 'Off')",
-      "$IsGameSource": "(PhysicalInputSelected == 2) || (PhysicalInputSelected == 4) || (PhysicalInputSelected == 6) || (PhysicalInputSelected == 8)"
+      "$IsGameSource": "(PhysicalInputSelected == 2) || (PhysicalInputSelected == 4) || (PhysicalInputSelected == 6) || (PhysicalInputSelected == 8)",
+      "$GUI": "SourceVerticalRate == '050'"
     },
     "Rules": [
 
@@ -58,7 +59,7 @@
 
       {
         "Name": "SourceFitHeight",
-        "Condition": "!$Is3D && !$IsGameSource && $FitHeight",
+        "Condition": "!$Is3D && !$IsGameSource && ($FitHeight || $GUI)",
         "Actions": [
           {
             "RadiancePro.Send": "c"
@@ -67,7 +68,7 @@
       },
       {
         "Name": "SourceFitWidth",
-        "Condition": "!$Is3D && !$IsGameSource && $FitWidth",
+        "Condition": "!$Is3D && !$IsGameSource && $FitWidth && !$GUI",
         "Actions": [
           {
             "RadiancePro.Send": "b"
@@ -76,7 +77,7 @@
       },
       {
         "Name": "SourceNative",
-        "Condition": "!$Is3D && !$IsGameSource && $FitNative",
+        "Condition": "!$Is3D && !$IsGameSource && $FitNative && !$GUI",
         "Actions": [
           {
             "RadiancePro.Send": "a"
