@@ -76,16 +76,15 @@ namespace RadiantPi.Telnet {
         }
 
         public void Disconnect() {
-            _logger?.LogInformation($"disconnecting telnet socket");
             if(_tcpClient == null) {
 
                 // nothing to do
                 return;
             }
+            _logger?.LogInformation($"disconnecting telnet socket");
 
             // cancel socket read operations
             try {
-
                 _internalCancellation?.Cancel();
                 _internalCancellation = null;
             } catch {

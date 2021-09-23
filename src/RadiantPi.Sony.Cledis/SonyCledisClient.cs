@@ -179,6 +179,7 @@ namespace RadiantPi.Sony.Cledis {
                 _mutex.Release();
             }
         }
+        
         private async Task ConfirmConnectionAsync(ITelnet client, TextReader reader, TextWriter writer) {
             var handshake = await reader.ReadLineAsync();
 
