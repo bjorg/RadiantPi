@@ -160,7 +160,7 @@ namespace RadiantPi.Sony.Cledis {
             try {
                 TaskCompletionSource<string> responseSource = new();
 
-                // send message and await response, and validate
+                // send message and await response
                 try {
                     _telnet.MessageReceived += ResponseHandler;
                     await _telnet.SendAsync(message);

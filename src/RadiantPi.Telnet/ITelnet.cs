@@ -32,13 +32,14 @@ namespace RadiantPi.Telnet {
 
     public interface ITelnet : IDisposable {
 
-        //--- Event Handlers ---
+        //--- Events ---
         event EventHandler<TelnetMessageReceivedEventArgs> MessageReceived;
 
         //--- Properties ---
         TelnetConnectionHandshakeAsync ConfirmConnectionAsync { get; set; }
 
         //--- Methods ---
+        Task<bool> ConnectAsync();
         Task SendAsync(string message);
 
         // TODO: add method to close connection rather than waiting for it to timeout

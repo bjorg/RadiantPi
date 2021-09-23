@@ -46,6 +46,7 @@ namespace RadiantPi.Telnet {
         private TcpClient _tcpClient;
         private StreamWriter _streamWriter;
         private bool _disposed = false;
+        private bool _sendReady;
 
         //--- Constructors ---
         public TelnetClient(string host, int port, ILogger logger = null) {
@@ -54,7 +55,7 @@ namespace RadiantPi.Telnet {
             _logger = logger;
         }
 
-        //--- Event Handlers ---
+        //--- Events ---
         public event EventHandler<TelnetMessageReceivedEventArgs> MessageReceived;
 
         //--- Properties ---
@@ -69,6 +70,9 @@ namespace RadiantPi.Telnet {
 
             // open connection
             await ConnectAsync().ConfigureAwait(false);
+            if(!_sendReady) {
+                throw new InvalidOperationException("Client is not ready to send messages");
+            }
 
             // Send command + params
             _logger?.LogInformation($"sending: '{Escape(message)}'");
@@ -111,13 +115,11 @@ namespace RadiantPi.Telnet {
             }
         }
 
-        public void Dispose() => Dispose(true);
-
-        private async Task ConnectAsync() {
+        public async Task<bool> ConnectAsync() {
 
             // check if socket is already connected
             if(_tcpClient?.Connected ?? false) {
-                return;
+                return false;
             }
             _logger?.LogInformation($"connecting telnet socket");
 
@@ -146,7 +148,10 @@ namespace RadiantPi.Telnet {
                 streamReader,
                 _internalCancellation
             );
+            return true;
         }
+
+        public void Dispose() => Dispose(true);
 
         private async Task WaitForMessages(
             TcpClient tcpClient,
@@ -154,6 +159,7 @@ namespace RadiantPi.Telnet {
             CancellationTokenSource cancellationToken
         ) {
             try {
+                _sendReady = true;
                 while(true) {
 
                     // check if cancelation token is set
@@ -199,6 +205,7 @@ namespace RadiantPi.Telnet {
                     }
                 }
             } finally {
+                _sendReady = false;
                 streamReader.Close();
             }
         }
