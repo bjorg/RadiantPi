@@ -10,5 +10,7 @@ namespace RadiantPi.Trinnov.Altitude {
 
         //--- Methods ---
         Task ConnectAsync();
+        Task SetVolumeAsync(float volume);
+        Task AdjustVolumeAsync(float delta);
     }
 }

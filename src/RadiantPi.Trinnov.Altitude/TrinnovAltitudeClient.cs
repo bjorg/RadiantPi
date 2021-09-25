@@ -53,34 +53,12 @@ namespace RadiantPi.Trinnov.Altitude {
             }
         }
 
+        public Task SetVolumeAsync(float volume) => _telnet.SendAsync($"volume {volume}");
+        public Task AdjustVolumeAsync(float delta) => _telnet.SendAsync($"dvolume {delta}");
+
         public void Dispose() {
             _mutex.Dispose();
             _telnet.Dispose();
-        }
-
-        private async Task<string> SendAsync(string message) {
-            await _mutex.WaitAsync();
-            try {
-                TaskCompletionSource<string> responseSource = new();
-
-                // send message and await response
-                try {
-                    _telnet.MessageReceived += ResponseHandler;
-                    await _telnet.SendAsync(message);
-                    var response = await responseSource.Task;
-                    return response;
-                } finally {
-
-                    // remove response handler no matter what
-                    _telnet.MessageReceived -= ResponseHandler;
-                }
-
-                // local functions
-                void ResponseHandler(object sender, TelnetMessageReceivedEventArgs args)
-                    => responseSource.SetResult(args.Message);
-            } finally {
-                _mutex.Release();
-            }
         }
 
         private async Task ConfirmConnectionAsync(ITelnet client, TextReader reader, TextWriter writer) {

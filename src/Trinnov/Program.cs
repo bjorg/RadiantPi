@@ -53,6 +53,12 @@ namespace Trinnov {
                 case "quit":
                 case "bye":
                     goto done;
+                case "+":
+                    await trinnovClient.AdjustVolumeAsync(0.5f);
+                    break;
+                case "-":
+                    await trinnovClient.AdjustVolumeAsync(-0.5f);
+                    break;
                 case "":
                     continue;
                 }
