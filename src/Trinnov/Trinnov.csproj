@@ -4,6 +4,6 @@
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../RadiantPi.Telnet/RadiantPi.Telnet.csproj" />
+    <ProjectReference Include="../RadiantPi.Trinnov.Altitude/RadiantPi.Trinnov.Altitude.csproj" />
   </ItemGroup>
 </Project>

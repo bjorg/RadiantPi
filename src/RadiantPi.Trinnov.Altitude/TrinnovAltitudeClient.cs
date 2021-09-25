@@ -16,14 +16,6 @@ namespace RadiantPi.Trinnov.Altitude {
         public bool? Mock { get; set; }
     }
 
-    public interface TrinnovAltitude : IDisposable {
-
-        //--- Methods ---
-        Task GetCurrentState();
-        Task GetCurrentPreset();
-        Task GetCurrentProfile();
-    }
-
     public sealed class AudioDecoderChangedEventArgs : EventArgs {
 
         //--- Properties ---
@@ -31,16 +23,7 @@ namespace RadiantPi.Trinnov.Altitude {
         public string Upmixer { get; init; }
     }
 
-    public interface ITrinnovAltitude {
-
-        //--- Events ---
-        event EventHandler<AudioDecoderChangedEventArgs> AudioDecoderChanged;
-
-        //--- Methods ---
-        Task Connect();
-    }
-
-    public class TrinnovAltitudeClient : IDisposable {
+    public class TrinnovAltitudeClient : ITrinnovAltitude {
 
         //--- Class Fields ---
         private static Regex _audioModeRegex = new Regex(@"DECODER NONAUDIO [01] PLAYABLE (?<playable>[01]) DECODER (?<decoder>.+) UPMIXER (?<upmixer>.+)", RegexOptions.Compiled);
@@ -75,7 +58,7 @@ namespace RadiantPi.Trinnov.Altitude {
             _telnet.Dispose();
         }
 
-        public async Task<string> SendAsync(string message) {
+        private async Task<string> SendAsync(string message) {
             await _mutex.WaitAsync();
             try {
                 TaskCompletionSource<string> responseSource = new();
