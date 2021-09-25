@@ -20,7 +20,13 @@ namespace Trinnov {
 
             public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) {
                 if(logLevel >= LogLevel.Debug) {
-                    Console.WriteLine($"{logLevel.ToString().ToUpper()}: {formatter(state, exception)}");
+                    var foregroundColor = Console.ForegroundColor;
+                    try {
+                        Console.ForegroundColor = ConsoleColor.DarkGray;
+                        Console.WriteLine($"{logLevel.ToString().ToUpper()}: {formatter(state, exception)}");
+                    } finally {
+                        Console.ForegroundColor = foregroundColor;
+                    }
                 }
             }
         }

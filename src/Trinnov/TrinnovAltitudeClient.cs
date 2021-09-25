@@ -111,6 +111,9 @@ namespace RadiantPi.Trinnov.Altitude {
         }
 
         private void MessageReceived(object sender, TelnetMessageReceivedEventArgs args) {
+            _logger.LogDebug($"received: {args.Message}");
+
+            // check for audio event
             var match = _audioModeRegex.Match(args.Message);
             if(match.Success) {
                 var playable = match.Groups["playable"].Value;
@@ -125,14 +128,6 @@ namespace RadiantPi.Trinnov.Altitude {
                     Decoder = match.Groups["decoder"].Value,
                     Upmixer = match.Groups["upmixer"].Value
                 });
-            } else {
-                var foregroundColor = Console.ForegroundColor;
-                try {
-                    Console.ForegroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine($"RECEIVED: {args.Message}");
-                } finally {
-                    Console.ForegroundColor = foregroundColor;
-                }
             }
         }
     }
