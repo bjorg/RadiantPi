@@ -20,12 +20,6 @@ namespace RadiantPi.Sony.Cledis {
 
     public class SonyCledisClient : ASonyCledisClient {
 
-        //--- Class Methods ---
-        public static ISonyCledis Initialize(SonyCledisClientConfig config, ILogger logger = null)
-            => (config.Mock ?? false)
-                ? new SonyCledisMockClient(logger)
-                : new SonyCledisClient(config, logger);
-
         //--- Fields ---
         private readonly ITelnet _telnet;
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);

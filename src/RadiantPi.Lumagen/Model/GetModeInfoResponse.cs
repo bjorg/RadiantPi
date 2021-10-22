@@ -21,7 +21,7 @@ using System;
 namespace RadiantPi.Lumagen.Model {
 
     // TODO: rename to `RadianceProDetails`
-    public class ModeInfoDetails {
+    public class ModeInfo {
 
         // Radiance Pro only(release 041120 and later).
         // Full information query('Fullv4' for unsolicited status output):
@@ -85,5 +85,5 @@ namespace RadiantPi.Lumagen.Model {
         public string DetectedRasterAspectRatio { get; set; }
     }
 
-    public sealed class GetModeInfoResponse : ModeInfoDetails { }
+    public sealed class GetModeInfoResponse : ModeInfo { }
 }

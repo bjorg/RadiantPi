@@ -42,7 +42,7 @@ namespace RadiantPi.Automation {
             //--- Properties ---
             public string Name { get; set; }
             public string ConditionDefinition { get; set; }
-            public ExpressionParser<ModeInfoDetails>.ExpressionDelegate Function { get; set; }
+            public ExpressionParser<ModeInfo>.ExpressionDelegate Function { get; set; }
             public HashSet<string> Dependencies { get; set; }
         }
 
@@ -52,15 +52,15 @@ namespace RadiantPi.Automation {
             public string Name { get; set; }
             public bool Enabled { get; set; }
             public string ConditionDefinition { get; set; }
-            public ExpressionParser<ModeInfoDetails>.ExpressionDelegate ConditionFunction { get; set; }
+            public ExpressionParser<ModeInfo>.ExpressionDelegate ConditionFunction { get; set; }
             public IEnumerable<AutomationAction> Actions { get; set; }
             public HashSet<string> Dependencies { get; set; }
         }
 
         //--- Class Methods ---
-        private HashSet<string> DetectChangedProperties(ModeInfoDetails current, ModeInfoDetails last) {
+        private HashSet<string> DetectChangedProperties(ModeInfo current, ModeInfo last) {
             var result = new HashSet<string>();
-            foreach(var property in typeof(ModeInfoDetails).GetProperties()) {
+            foreach(var property in typeof(ModeInfo).GetProperties()) {
                 var currentPropertyValue = property.GetValue(current);
                 var lastPropertyValue = property.GetValue(last);
                 if(currentPropertyValue is not null) {
@@ -83,7 +83,7 @@ namespace RadiantPi.Automation {
         private ILogger _logger;
         private Dictionary<string, Condition> _conditions = new();
         private List<Rule> _rules = new();
-        private ModeInfoDetails _lastModeInfo = new();
+        private ModeInfo _lastModeInfo = new();
 
         //--- Constructors ---
         public AutomationController(IRadiancePro client, ISonyCledis cledisClient, AutomationConfig config, ILogger logger = null) {
@@ -110,7 +110,7 @@ namespace RadiantPi.Automation {
             // parse condition expressions
             foreach(var (conditionName, conditionDefinition) in conditions) {
                 try {
-                    var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(conditionName, conditionDefinition, out var dependencies);
+                    var expression = ExpressionParser<ModeInfo>.ParseExpression(conditionName, conditionDefinition, out var dependencies);
 
                     // verify that the condition does not depend on other conditions
                     foreach(var dependency in dependencies.Where(dependency => dependency.StartsWith("$"))) {
@@ -123,7 +123,7 @@ namespace RadiantPi.Automation {
                     _conditions.Add(conditionName, new() {
                         Name = conditionName,
                         ConditionDefinition = conditionDefinition,
-                        Function = (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile(),
+                        Function = (ExpressionParser<ModeInfo>.ExpressionDelegate)expression.Compile(),
                         Dependencies = dependencies
                     });
                 } catch(Exception e) {
@@ -143,7 +143,7 @@ namespace RadiantPi.Automation {
                 ++ruleIndex;
                 var ruleName = rule.Name ?? $"Rule #{ruleIndex}";
                 try {
-                    var expression = ExpressionParser<ModeInfoDetails>.ParseExpression(ruleName, rule.Condition, out var dependencies);
+                    var expression = ExpressionParser<ModeInfo>.ParseExpression(ruleName, rule.Condition, out var dependencies);
 
                     // flatten condition dependencies
                     var flattenedDependencies = new HashSet<string>();
@@ -174,7 +174,7 @@ namespace RadiantPi.Automation {
                         Name = ruleName,
                         Enabled = rule.Enabled,
                         ConditionDefinition = rule.Condition,
-                        ConditionFunction = (ExpressionParser<ModeInfoDetails>.ExpressionDelegate)expression.Compile(),
+                        ConditionFunction = (ExpressionParser<ModeInfo>.ExpressionDelegate)expression.Compile(),
                         Actions = rule.Actions,
                         Dependencies = flattenedDependencies
                     });
@@ -184,25 +184,25 @@ namespace RadiantPi.Automation {
             }
         }
 
-        private async void OnModeInfoChanged(object sender, ModeInfoDetailsEventArgs args) {
+        private async void OnModeInfoChanged(object sender, ModeInfoChangedEventArgs args) {
             var serializerOptions = new JsonSerializerOptions {
                 WriteIndented = true,
                 Converters = {
                     new JsonStringEnumConverter()
                 }
             };
-            _logger?.LogDebug($"event received: {JsonSerializer.Serialize(args.ModeInfoDetails, serializerOptions)}");
+            _logger?.LogDebug($"event received: {JsonSerializer.Serialize(args.ModeInfo, serializerOptions)}");
 
             // evaluate all conditions
             var conditions = new Dictionary<string, bool>();
             conditions = _conditions
-                .Select(condition => (Name: condition.Key, Value: condition.Value.Function(args.ModeInfoDetails, conditions)))
+                .Select(condition => (Name: condition.Key, Value: condition.Value.Function(args.ModeInfo, conditions)))
                 .ToDictionary(kv => kv.Name, kv => kv.Value);
             _logger?.LogTrace($"conditions: {JsonSerializer.Serialize(conditions, serializerOptions)}");
 
             // detect which properties changed from last mode-info change
-            var changed = DetectChangedProperties(args.ModeInfoDetails, _lastModeInfo);
-            _lastModeInfo = args.ModeInfoDetails;
+            var changed = DetectChangedProperties(args.ModeInfo, _lastModeInfo);
+            _lastModeInfo = args.ModeInfo;
             if(!changed.Any()) {
                 _logger?.LogTrace("no changes detected in event");
                 return;
@@ -220,7 +220,7 @@ namespace RadiantPi.Automation {
 
                 // evaluate rule and run actions if the condition passes
                 try {
-                    var eval = rule.ConditionFunction(args.ModeInfoDetails, conditions);
+                    var eval = rule.ConditionFunction(args.ModeInfo, conditions);
                     _logger?.LogDebug($"rule '{rule.Name}': {rule.ConditionDefinition} ==> {eval}");
                     if(eval) {
 

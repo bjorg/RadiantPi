@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen;
 using RadiantPi.Lumagen.Model;
 using RadiantPi.Sony.Cledis;
+using RadiantPi.Trinnov.Altitude;
 
 namespace Solfar {
 
@@ -12,27 +13,40 @@ namespace Solfar {
         //--- Fields ---
         private IRadiancePro _radianceProClient;
         private ISonyCledis _cledisClient;
-        private ModeInfoDetails _radiancePro;
+        protected ITrinnovAltitude _trinnovClient;
+        private ModeInfo _radianceProModeInfo;
+        private AudioDecoderChangedEventArgs _trinnovAudioDecoder;
 
         //--- Constructors ---
-        public SolfarOrchestrator(IRadiancePro radianceProClient, ISonyCledis cledisClient, ILogger logger = null) : base(logger) {
+        public SolfarOrchestrator(
+            IRadiancePro radianceProClient,
+            ISonyCledis cledisClient,
+            ITrinnovAltitude trinnovClient,
+            ILogger logger = null
+        ) : base(logger) {
             _radianceProClient = radianceProClient ?? throw new ArgumentNullException(nameof(radianceProClient));
             _cledisClient = cledisClient ?? throw new ArgumentNullException(nameof(cledisClient));
+            _trinnovClient = trinnovClient ?? throw new ArgumentNullException(nameof(trinnovClient));
 
             // subscribing to events
             _radianceProClient.ModeInfoChanged += OnModeInfoChanged;
+            _trinnovClient.AudioDecoderChanged += OnAudioCodecChanged;
         }
 
         //--- Methods ---
         public override void Stop() {
+            _trinnovClient.AudioDecoderChanged -= OnAudioCodecChanged;
             _radianceProClient.ModeInfoChanged -= OnModeInfoChanged;
             base.Stop();
         }
 
         protected override bool ProcessChanges(object change) {
             switch(change) {
-            case ModeInfoDetails modeInfoDetails:
-                _radiancePro = modeInfoDetails;
+            case ModeInfoChangedEventArgs modeInfoDetailsEventArgs:
+                _radianceProModeInfo = modeInfoDetailsEventArgs.ModeInfo;
+                return true;
+            case AudioDecoderChangedEventArgs audioDecoderChangedEventArgs:
+                _trinnovAudioDecoder = audioDecoderChangedEventArgs;
                 return true;
             default:
                 Logger.LogWarning($"unrecognized channel event: {change?.GetType().FullName}");
@@ -43,14 +57,14 @@ namespace Solfar {
         protected override async Task EvaluateChangeAsync() {
 
             // fetch values
-            var fitHeight = StringComparer.Ordinal.Compare(_radiancePro.DetectedAspectRatio, "178") < 0;
-            var fitWidth = (StringComparer.Ordinal.Compare(_radiancePro.DetectedAspectRatio, "178") >= 0)
-                && (StringComparer.Ordinal.Compare(_radiancePro.DetectedAspectRatio, "200") <= 0);
-            var fitNative = StringComparer.Ordinal.Compare(_radiancePro.DetectedAspectRatio, "200") > 0;
-            var isHdr = _radiancePro.SourceDynamicRange == RadianceProDynamicRange.HDR;
-            var is3D = (_radiancePro.Source3DMode != RadiancePro3D.Undefined) && (_radiancePro.Source3DMode != RadiancePro3D.Off);
-            var isGameSource = _radiancePro.PhysicalInputSelected is 2 or 4 or 6 or 8;
-            var isGui = _radiancePro.SourceVerticalRate == "050";
+            var fitHeight = StringComparer.Ordinal.Compare(_radianceProModeInfo.DetectedAspectRatio, "178") < 0;
+            var fitWidth = (StringComparer.Ordinal.Compare(_radianceProModeInfo.DetectedAspectRatio, "178") >= 0)
+                && (StringComparer.Ordinal.Compare(_radianceProModeInfo.DetectedAspectRatio, "200") <= 0);
+            var fitNative = StringComparer.Ordinal.Compare(_radianceProModeInfo.DetectedAspectRatio, "200") > 0;
+            var isHdr = _radianceProModeInfo.SourceDynamicRange == RadianceProDynamicRange.HDR;
+            var is3D = (_radianceProModeInfo.Source3DMode != RadiancePro3D.Undefined) && (_radianceProModeInfo.Source3DMode != RadiancePro3D.Off);
+            var isGameSource = _radianceProModeInfo.PhysicalInputSelected is 2 or 4 or 6 or 8;
+            var isGui = _radianceProModeInfo.SourceVerticalRate == "050";
 
             // evaluate rules
             await DoAsync("Switch to 3D", is3D, SwitchTo3DAsync);
@@ -60,8 +74,11 @@ namespace Solfar {
             await DoAsync("Fit Native", !is3D && !isGameSource && fitNative && !isGui, FitNativeAsync);
         }
 
-        private void OnModeInfoChanged(object sender, ModeInfoDetailsEventArgs args)
-            => NotifyOfChanges(args.ModeInfoDetails);
+        private void OnModeInfoChanged(object sender, ModeInfoChangedEventArgs args)
+            => NotifyOfChanges(args);
+
+        private void OnAudioCodecChanged(object sender, AudioDecoderChangedEventArgs args)
+            => NotifyOfChanges(args);
 
         private async Task SwitchTo3DAsync() {
             await _cledisClient.SetInputAsync(SonyCledisInput.Hdmi2);

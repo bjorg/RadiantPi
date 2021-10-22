@@ -3,31 +3,39 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen;
 using RadiantPi.Sony.Cledis;
+using RadiantPi.Trinnov.Altitude;
 
 namespace Solfar {
 
     public static class Program {
 
-        //--- Class Properties ---
-        private static ILogger Logger { get; } = new ConsoleLogger();
-
         //--- Class Methods ---
         public static async Task Main(string[] args) {
+            var logger = new ConsoleLogger();
 
             // initialize clients
-            Logger.LogInformation("Initializing clients");
-            using var radianceProClient = RadianceProClient.Initialize(new() {
+            logger.LogInformation("Initializing clients");
+            using RadianceProClient radianceProClient = new(new() {
                 PortName = "/dev/ttyUSB0",
                 BaudRate = 9600
-            }, Logger);
-            using var cledisClient = SonyCledisClient.Initialize(new() {
+            }, logger);
+            using SonyCledisClient cledisClient = new(new SonyCledisClientConfig {
                 Host = "192.168.1.190",
                 Port = 53595
-            }, Logger);
+            }, logger);
+            using TrinnovAltitudeClient trinnovClient = new(new TrinnovAltitudeClientConfig {
+                Host = "192.168.1.180",
+                Port = 44100
+            }, logger);
 
             // run orchestrator
-            Logger.LogInformation("Run orchestrator");
-            SolfarOrchestrator orchestrator = new(radianceProClient, cledisClient, Logger);
+            logger.LogInformation("Run orchestrator");
+            SolfarOrchestrator orchestrator = new(
+                radianceProClient,
+                cledisClient,
+                trinnovClient,
+                logger
+            );
             orchestrator.Start();
             _ = Task.Run(() => {
                 Console.ReadLine();

@@ -123,7 +123,7 @@ namespace RadiantPi.Lumagen {
         private static string SanitizeText(string value, int maxLength) => new string(value.Take(maxLength).Select(c => (char.IsLetterOrDigit(c) ? c : ' ')).ToArray());
 
         //--- Fields ---
-        public event EventHandler<ModeInfoDetailsEventArgs> ModeInfoChanged;
+        public event EventHandler<ModeInfoChangedEventArgs> ModeInfoChanged;
         private readonly SerialPort _serialPort;
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
         private string _accumulator = "";
@@ -349,7 +349,7 @@ namespace RadiantPi.Lumagen {
                     if(modeInfoResponse is not null) {
                         _logger?.LogInformation("matched event: ModeInfoChanged");
                         ModeInfoChanged?.Invoke(this, new() {
-                            ModeInfoDetails = modeInfoResponse
+                            ModeInfo = modeInfoResponse
                         });
                     }
                 } else {

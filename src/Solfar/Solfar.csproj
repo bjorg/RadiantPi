@@ -6,5 +6,6 @@
   <ItemGroup>
     <ProjectReference Include="../RadiantPi.Lumagen/RadiantPi.Lumagen.csproj" />
     <ProjectReference Include="../RadiantPi.Sony.Cledis/RadiantPi.Sony.Cledis.csproj" />
+    <ProjectReference Include="../RadiantPi.Trinnov.Altitude/RadiantPi.Trinnov.Altitude.csproj" />
   </ItemGroup>
 </Project>

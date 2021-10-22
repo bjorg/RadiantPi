@@ -119,7 +119,7 @@
     private string OutputCmsLabel { get; set; }
     private string OutputStyleLabel { get; set; }
     private GetDeviceInfoResponse DeviceInfo { get; set; }
-    private ModeInfoDetails ModeInfo { get; set; }
+    private ModeInfo ModeInfo { get; set; }
 
     //--- Methods ---
     protected override async Task OnInitializedAsync() {
@@ -178,14 +178,14 @@
             _ => refreshRate
         };
 
-    private void OnModeInfoChanged(object sender, ModeInfoDetailsEventArgs args) =>
+    private void OnModeInfoChanged(object sender, ModeInfoChangedEventArgs args) =>
         InvokeAsync(async () => {
 
             // TODO: remove this code
             Console.WriteLine("OnModeInfoChanged received");
 
             // update mode info and refresh state
-            ModeInfo = args.ModeInfoDetails;
+            ModeInfo = args.ModeInfo;
             OutputStyleLabel = await GetStyleLabelAsync(ModeInfo.OutputStyle);
             OutputCmsLabel = await GetCmsLabelAsync(ModeInfo.OutputCms);
             StateHasChanged();
