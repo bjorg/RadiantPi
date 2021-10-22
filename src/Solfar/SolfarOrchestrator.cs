@@ -15,18 +15,18 @@ namespace Solfar {
         private ISonyCledis _cledisClient;
         protected ITrinnovAltitude _trinnovClient;
         private ModeInfo _radianceProModeInfo;
-        private AudioDecoderChangedEventArgs _trinnovAudioDecoder;
+        private AudioDecoderChangedEventArgs _altitudeAudioDecoder;
 
         //--- Constructors ---
         public SolfarOrchestrator(
             IRadiancePro radianceProClient,
             ISonyCledis cledisClient,
-            ITrinnovAltitude trinnovClient,
+            ITrinnovAltitude altitudeClient,
             ILogger logger = null
         ) : base(logger) {
             _radianceProClient = radianceProClient ?? throw new ArgumentNullException(nameof(radianceProClient));
             _cledisClient = cledisClient ?? throw new ArgumentNullException(nameof(cledisClient));
-            _trinnovClient = trinnovClient ?? throw new ArgumentNullException(nameof(trinnovClient));
+            _trinnovClient = altitudeClient ?? throw new ArgumentNullException(nameof(altitudeClient));
 
             // subscribing to events
             _radianceProClient.ModeInfoChanged += OnModeInfoChanged;
@@ -46,7 +46,7 @@ namespace Solfar {
                 _radianceProModeInfo = modeInfoDetailsEventArgs.ModeInfo;
                 return true;
             case AudioDecoderChangedEventArgs audioDecoderChangedEventArgs:
-                _trinnovAudioDecoder = audioDecoderChangedEventArgs;
+                _altitudeAudioDecoder = audioDecoderChangedEventArgs;
                 return true;
             default:
                 Logger.LogWarning($"unrecognized channel event: {change?.GetType().FullName}");
