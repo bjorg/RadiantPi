@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Sony.Cledis.Exceptions;
+using RadiantPi.Sony.Cledis.Mock;
 using RadiantPi.Telnet;
 
 namespace RadiantPi.Sony.Cledis {
@@ -18,6 +19,12 @@ namespace RadiantPi.Sony.Cledis {
     }
 
     public class SonyCledisClient : ASonyCledisClient {
+
+        //--- Class Methods ---
+        public static ISonyCledis Initialize(SonyCledisClientConfig config, ILogger logger = null)
+            => (config.Mock ?? false)
+                ? new SonyCledisMockClient(logger)
+                : new SonyCledisClient(config, logger);
 
         //--- Fields ---
         private readonly ITelnet _telnet;
@@ -179,7 +186,7 @@ namespace RadiantPi.Sony.Cledis {
                 _mutex.Release();
             }
         }
-        
+
         private async Task ConfirmConnectionAsync(ITelnet client, TextReader reader, TextWriter writer) {
             var handshake = await reader.ReadLineAsync();
 

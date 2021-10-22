@@ -195,6 +195,21 @@ namespace RadiantPi.Lumagen {
         public Task SetStyleLabelAsync(RadianceProStyle style, string value)
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
+        public Task SelectMemory(RadianceProMemory memory) {
+            switch(memory) {
+            case RadianceProMemory.MemoryA:
+                return SendAsync("a", expectResponse: false);
+            case RadianceProMemory.MemoryB:
+                return SendAsync("b", expectResponse: false);
+            case RadianceProMemory.MemoryC:
+                return SendAsync("c", expectResponse: false);
+            case RadianceProMemory.MemoryD:
+                return SendAsync("d", expectResponse: false);
+            default:
+                throw new ArgumentException("invalid memory selection");
+            };
+        }
+
         // TODO: add commands
 
         // ZY0M<CR>
@@ -219,18 +234,6 @@ namespace RadiantPi.Lumagen {
 
         // ZX
         //  Clear-- Clear any onscreen message
-
-        public void Dispose() {
-            _serialPort.DataReceived -= SerialDataReceived;
-            _mutex.Dispose();
-            if(_serialPort.IsOpen) {
-                _logger?.LogInformation("closing serial port");
-                _serialPort.DiscardInBuffer();
-                _serialPort.DiscardOutBuffer();
-                _serialPort.Close();
-            }
-            _serialPort.Dispose();
-        }
 
         public async Task<string> SendAsync(string command, bool expectResponse) {
             var buffer = Encoding.UTF8.GetBytes(command);
@@ -270,6 +273,18 @@ namespace RadiantPi.Lumagen {
             } finally {
                 _mutex.Release();
             }
+        }
+
+        public void Dispose() {
+            _serialPort.DataReceived -= SerialDataReceived;
+            _mutex.Dispose();
+            if(_serialPort.IsOpen) {
+                _logger?.LogInformation("closing serial port");
+                _serialPort.DiscardInBuffer();
+                _serialPort.DiscardOutBuffer();
+                _serialPort.Close();
+            }
+            _serialPort.Dispose();
         }
 
         private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {

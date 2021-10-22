@@ -194,6 +194,11 @@ namespace RadiantPi.Lumagen.Utility {
             return Task.CompletedTask;
         }
 
+        public Task SelectMemory(RadianceProMemory memory) {
+            CheckNotDisposed();
+            return Task.CompletedTask;
+        }
+
         public Task<string> SendAsync(string command, bool expectResponse)
             => Task.FromResult((string)null);
 

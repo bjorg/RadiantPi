@@ -18,6 +18,7 @@
 
 namespace RadiantPi.Lumagen.Model {
 
+    // TODO: rename to `RadianceProDetails`
     public class ModeInfoDetails {
 
         // Radiance Pro only(release 041120 and later).
