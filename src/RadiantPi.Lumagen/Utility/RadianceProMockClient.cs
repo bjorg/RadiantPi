@@ -101,7 +101,7 @@ namespace RadiantPi.Lumagen.Utility {
         };
 
         //--- Events ---
-        public event EventHandler<ModeInfoDetails> ModeInfoChanged;
+        public event EventHandler<ModeInfoDetailsEventArgs> ModeInfoChanged;
 
         //--- Methods ---
         public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync()

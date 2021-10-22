@@ -178,14 +178,14 @@
             _ => refreshRate
         };
 
-    private void OnModeInfoChanged(object sender, ModeInfoDetails response) =>
+    private void OnModeInfoChanged(object sender, ModeInfoDetailsEventArgs args) =>
         InvokeAsync(async () => {
 
             // TODO: remove this code
             Console.WriteLine("OnModeInfoChanged received");
 
             // update mode info and refresh state
-            ModeInfo = response;
+            ModeInfo = args.ModeInfoDetails;
             OutputStyleLabel = await GetStyleLabelAsync(ModeInfo.OutputStyle);
             OutputCmsLabel = await GetCmsLabelAsync(ModeInfo.OutputCms);
             StateHasChanged();

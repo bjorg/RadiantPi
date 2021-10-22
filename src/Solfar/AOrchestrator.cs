@@ -24,7 +24,7 @@ namespace Solfar {
         protected abstract Task EvaluateChangeAsync();
 
         //--- Methods ---
-        public virtual ValueTask NotifyOfChangesAsync(object change) => _channel.Writer.WriteAsync(change);
+        public virtual void NotifyOfChanges(object change) => _channel.Writer.TryWrite(change);
 
         public virtual void Start()
             => Task.Run((Func<Task>)(async () => {

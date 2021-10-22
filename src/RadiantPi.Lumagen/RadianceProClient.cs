@@ -123,7 +123,7 @@ namespace RadiantPi.Lumagen {
         private static string SanitizeText(string value, int maxLength) => new string(value.Take(maxLength).Select(c => (char.IsLetterOrDigit(c) ? c : ' ')).ToArray());
 
         //--- Fields ---
-        public event EventHandler<ModeInfoDetails> ModeInfoChanged;
+        public event EventHandler<ModeInfoDetailsEventArgs> ModeInfoChanged;
         private readonly SerialPort _serialPort;
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
         private string _accumulator = "";
@@ -348,7 +348,9 @@ namespace RadiantPi.Lumagen {
                     var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length + 1));
                     if(modeInfoResponse is not null) {
                         _logger?.LogInformation("matched event: ModeInfoChanged");
-                        ModeInfoChanged?.Invoke(this, modeInfoResponse);
+                        ModeInfoChanged?.Invoke(this, new() {
+                            ModeInfoDetails = modeInfoResponse
+                        });
                     }
                 } else {
                     _logger?.LogWarning($"unrecognized event: '{Escape(prefix)}'");

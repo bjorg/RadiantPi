@@ -60,8 +60,8 @@ namespace Solfar {
             await DoAsync("Fit Native", !is3D && !isGameSource && fitNative && !isGui, FitNativeAsync);
         }
 
-        private async void OnModeInfoChanged(object sender, ModeInfoDetails details)
-            => await NotifyOfChangesAsync(details);
+        private void OnModeInfoChanged(object sender, ModeInfoDetailsEventArgs args)
+            => NotifyOfChanges(args.ModeInfoDetails);
 
         private async Task SwitchTo3DAsync() {
             await _cledisClient.SetInputAsync(SonyCledisInput.Hdmi2);

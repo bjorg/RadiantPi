@@ -16,6 +16,8 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+using System;
+
 namespace RadiantPi.Lumagen.Model {
 
     // TODO: rename to `RadianceProDetails`

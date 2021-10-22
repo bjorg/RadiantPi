@@ -184,25 +184,25 @@ namespace RadiantPi.Automation {
             }
         }
 
-        private async void OnModeInfoChanged(object sender, ModeInfoDetails modeInfo) {
+        private async void OnModeInfoChanged(object sender, ModeInfoDetailsEventArgs args) {
             var serializerOptions = new JsonSerializerOptions {
                 WriteIndented = true,
                 Converters = {
                     new JsonStringEnumConverter()
                 }
             };
-            _logger?.LogDebug($"event received: {JsonSerializer.Serialize(modeInfo, serializerOptions)}");
+            _logger?.LogDebug($"event received: {JsonSerializer.Serialize(args.ModeInfoDetails, serializerOptions)}");
 
             // evaluate all conditions
             var conditions = new Dictionary<string, bool>();
             conditions = _conditions
-                .Select(condition => (Name: condition.Key, Value: condition.Value.Function(modeInfo, conditions)))
+                .Select(condition => (Name: condition.Key, Value: condition.Value.Function(args.ModeInfoDetails, conditions)))
                 .ToDictionary(kv => kv.Name, kv => kv.Value);
             _logger?.LogTrace($"conditions: {JsonSerializer.Serialize(conditions, serializerOptions)}");
 
             // detect which properties changed from last mode-info change
-            var changed = DetectChangedProperties(modeInfo, _lastModeInfo);
-            _lastModeInfo = modeInfo;
+            var changed = DetectChangedProperties(args.ModeInfoDetails, _lastModeInfo);
+            _lastModeInfo = args.ModeInfoDetails;
             if(!changed.Any()) {
                 _logger?.LogTrace("no changes detected in event");
                 return;
@@ -220,7 +220,7 @@ namespace RadiantPi.Automation {
 
                 // evaluate rule and run actions if the condition passes
                 try {
-                    var eval = rule.ConditionFunction(modeInfo, conditions);
+                    var eval = rule.ConditionFunction(args.ModeInfoDetails, conditions);
                     _logger?.LogDebug($"rule '{rule.Name}': {rule.ConditionDefinition} ==> {eval}");
                     if(eval) {
 

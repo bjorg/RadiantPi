@@ -22,10 +22,16 @@ using RadiantPi.Lumagen.Model;
 
 namespace RadiantPi.Lumagen {
 
+    public class ModeInfoDetailsEventArgs : EventArgs {
+
+        //--- Properties ---
+        public ModeInfoDetails ModeInfoDetails { get; set; }
+    }
+
     public interface IRadiancePro : IDisposable {
 
         //--- Events ---
-        event EventHandler<ModeInfoDetails> ModeInfoChanged;
+        event EventHandler<ModeInfoDetailsEventArgs> ModeInfoChanged;
 
         //--- Methods ---
         Task<GetDeviceInfoResponse> GetDeviceInfoAsync();
