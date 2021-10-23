@@ -25,7 +25,7 @@ namespace RadiantPi.Lumagen {
     public class ModeInfoChangedEventArgs : EventArgs {
 
         //--- Properties ---
-        public ModeInfo ModeInfo { get; set; }
+        public RadianceProModeInfo ModeInfo { get; set; }
     }
 
     public interface IRadiancePro : IDisposable {

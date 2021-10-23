@@ -1,6 +1,6 @@
 using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using RadiantPi.Controller;
 using RadiantPi.Lumagen;
 using RadiantPi.Lumagen.Model;
 using RadiantPi.Sony.Cledis;
@@ -8,17 +8,17 @@ using RadiantPi.Trinnov.Altitude;
 
 namespace Solfar {
 
-    public class SolfarOrchestrator : AOrchestrator {
+    public class SolfarController : AController {
 
         //--- Fields ---
         private IRadiancePro _radianceProClient;
         private ISonyCledis _cledisClient;
         protected ITrinnovAltitude _trinnovClient;
-        private ModeInfo _radianceProModeInfo = new();
+        private RadianceProModeInfo _radianceProModeInfo = new();
         private AudioDecoderChangedEventArgs _altitudeAudioDecoder = new();
 
         //--- Constructors ---
-        public SolfarOrchestrator(
+        public SolfarController(
             IRadiancePro radianceProClient,
             ISonyCledis cledisClient,
             ITrinnovAltitude altitudeClient,

@@ -30,7 +30,7 @@ namespace Solfar {
 
             // run orchestrator
             logger.LogInformation("Run orchestrator");
-            SolfarOrchestrator orchestrator = new(
+            SolfarController orchestrator = new(
                 radianceProClient,
                 cledisClient,
                 trinnovClient,

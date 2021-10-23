@@ -4,9 +4,9 @@ using System.Threading.Channels;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace Solfar {
+namespace RadiantPi.Controller {
 
-    public abstract class AOrchestrator {
+    public abstract class AController {
 
         //--- Class Methods ---
         protected static bool LessThan(string left, string right) => StringComparer.Ordinal.Compare(left, right) < 0;
@@ -22,7 +22,7 @@ namespace Solfar {
         private List<(string Name, Func<object, Task> Action, object State)> _triggered = new();
 
         //--- Constructors ---
-        protected AOrchestrator(ILogger? logger = null) => Logger = logger;
+        protected AController(ILogger? logger = null) => Logger = logger;
 
         //--- Properties ---
         protected ILogger? Logger { get; }
