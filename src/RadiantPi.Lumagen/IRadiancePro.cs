@@ -44,7 +44,9 @@ namespace RadiantPi.Lumagen {
         Task SetCmsLabelAsync(RadianceProCms cms, string value);
         Task<string> GetStyleLabelAsync(RadianceProStyle style);
         Task SetStyleLabelAsync(RadianceProStyle style, string value);
-        Task SelectMemory(RadianceProMemory memory);
+        Task SelectMemoryAsync(RadianceProMemory memory);
+        Task ShowMessageAsync(string message, int seconds);
+        Task ClearMessageAsync();
         Task<string> SendAsync(string command, bool expectResponse);
     }
 }

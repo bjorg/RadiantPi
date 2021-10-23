@@ -195,7 +195,7 @@ namespace RadiantPi.Lumagen {
         public Task SetStyleLabelAsync(RadianceProStyle style, string value)
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r", expectResponse: false);
 
-        public Task SelectMemory(RadianceProMemory memory) {
+        public Task SelectMemoryAsync(RadianceProMemory memory) {
             switch(memory) {
             case RadianceProMemory.MemoryA:
                 return SendAsync("a", expectResponse: false);
@@ -209,6 +209,24 @@ namespace RadiantPi.Lumagen {
                 throw new ArgumentException("invalid memory selection");
             };
         }
+
+        public Task ShowMessageAsync(string message, int seconds) {
+            if(message is null) {
+                throw new ArgumentNullException(nameof(message));
+            }
+            if(message.Any(c => (c < 0x20) || (c > 0x7A))) {
+                throw new ArgumentOutOfRangeException(nameof(message), "characters must be >= ' ' (0x20) and <= 'z' (0x7A)");
+            }
+            if(message.Length > 60) {
+                throw new ArgumentOutOfRangeException(nameof(message), "string length must be <= 60 characters");
+            }
+            if((seconds < 0) || (seconds > 9)) {
+                throw new ArgumentOutOfRangeException(nameof(seconds), "value must be >= 0 and <= 9");
+            }
+            return SendAsync($"ZT{seconds}{message}\r", expectResponse: false);
+        }
+
+        public Task ClearMessageAsync() => SendAsync($"ZC", expectResponse: false);
 
         // TODO: add commands
 
@@ -226,14 +244,6 @@ namespace RadiantPi.Lumagen {
         //  A 0=sets background color. 1=sets foreground color. 2=sets blend value.
         //  RRGGBB for foreground, background id RGB color were RR, GG, or BB is hexadecimal 00-ff (0-256) value.
         //  When setting blend value, only last B digit is used so range is 000001-00000f where 'f'isopaque messages and '1'is near transparent.
-
-        // ZTMxxxx<CR>
-        //  Print message on the screen-- M = '0' to '9'... '9' leaves message until "ZC" sent.
-        //  2 lines, 30 characters per line, legal characters '' through 'z' (0x20 - 0x7a in hex), a carriage return or '{' can be used to terminate message.
-        //  ASCII extended characters set solid block for use as a volume bar.
-
-        // ZX
-        //  Clear-- Clear any onscreen message
 
         public async Task<string> SendAsync(string command, bool expectResponse) {
             var buffer = Encoding.UTF8.GetBytes(command);

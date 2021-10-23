@@ -16,23 +16,23 @@ namespace Solfar {
         protected static bool GreaterThan(string left, string right) => StringComparer.Ordinal.Compare(left, right) > 0;
 
         //--- Fields ---
-        private Dictionary<Func<Task>, bool> _rules = new();
-        private Channel<(object Sender, EventArgs EventArgs)> _channel = Channel.CreateUnbounded<(object Sender, EventArgs EventArgs)>();
+        private Dictionary<string, object> _rules = new();
+        private Channel<(object? Sender, EventArgs EventArgs)> _channel = Channel.CreateUnbounded<(object? Sender, EventArgs EventArgs)>();
         private TaskCompletionSource _taskCompletionSource = new();
-        private List<(string Name, Func<Task> Action)> _triggeredActions = new();
+        private List<(string Name, Func<object, Task> Action, object State)> _triggered = new();
 
         //--- Constructors ---
-        protected AOrchestrator(ILogger logger = null) => Logger = logger;
+        protected AOrchestrator(ILogger? logger = null) => Logger = logger;
 
         //--- Properties ---
-        protected ILogger Logger { get; }
+        protected ILogger? Logger { get; }
 
         //--- Abstract Methods ---
-        protected abstract bool ApplyEvent(object sender, EventArgs change);
+        protected abstract bool ApplyEvent(object? sender, EventArgs change);
         protected abstract void Evaluate();
 
         //--- Methods ---
-        public virtual void EventListener(object sender, EventArgs args) => _channel.Writer.TryWrite((Sender: sender, EventArgs: args));
+        public virtual void EventListener(object? sender, EventArgs args) => _channel.Writer.TryWrite((Sender: sender, EventArgs: args));
 
         public virtual void Start()
             => Task.Run((Func<Task>)(async () => {
@@ -48,47 +48,56 @@ namespace Solfar {
                 _taskCompletionSource.SetResult();
             }));
 
+        public virtual void Stop() => _channel.Writer.Complete();
+        public virtual Task WaitAsync() => _taskCompletionSource.Task;
+
         protected virtual async Task EvaluateChangeAsync() {
-            _triggeredActions.Clear();
+            _triggered.Clear();
             Logger?.LogDebug($"Evaluating changes");
             Evaluate();
-            Logger?.LogDebug($"Triggered {_triggeredActions.Count:N0} rules to execute");
-            foreach(var triggered in _triggeredActions) {
+            Logger?.LogDebug($"Triggered {_triggered.Count:N0} rules to execute");
+            foreach(var triggered in _triggered) {
                 Logger?.LogInformation($"Executing rule '{triggered.Name}'");
                 try {
-                    await triggered.Action().ConfigureAwait(false);
+                    await triggered.Action(triggered.State).ConfigureAwait(false);
                 } catch(Exception e) {
-                    Logger?.LogError(e, $"Exception while evaluating rule '{triggered.Name}'");
+                    Logger?.LogError(e, $"Exception while executing rule '{triggered.Name}'");
                 }
             }
         }
 
-        public virtual void Stop() => _channel.Writer.Complete();
-        public virtual Task WaitAsync() => _taskCompletionSource.Task;
+        protected virtual void OnTrue(string name, bool condition, Func<Task> callback)
+            => OnCondition(name, condition, (oldState, newState) => newState && !oldState, _ => callback());
 
-        protected virtual void OnTrue(string name, bool condition, Func<Task> callback) {
+        protected virtual void OnValueChanged<T>(string name, T value, Func<T, Task> callback) where T : notnull
+            => OnCondition(name, value, (oldState, newState) => !object.Equals(oldState, newState), callback);
+
+        protected virtual void OnCondition<T>(string name, T newState, Func<T, T, bool> condition, Func<T, Task> callback) where T : notnull {
+            if(condition is null) {
+                throw new ArgumentNullException(nameof(condition));
+            }
             if(callback is null) {
                 throw new ArgumentNullException(nameof(callback));
             }
 
             // check if this rule is being seen for the first time
-            if(_rules.TryGetValue(callback, out var oldState)) {
-                if(condition) {
-                    if(!oldState) {
-                        Logger?.LogDebug($"Trigger rule '{name}': {oldState} --> {condition}");
-                        _triggeredActions.Add((Name: name, Action: callback));
+            if(_rules.TryGetValue(name, out var oldState)) {
+                try {
+                    if(condition((T)oldState, newState)) {
+                        Logger?.LogDebug($"Trigger rule '{name}': {oldState} --> {newState}");
+                        _triggered.Add((Name: name, Action: state => callback((T)state), State: (object)newState));
                     } else {
-                        Logger?.LogDebug($"Ignore rule '{name}': {oldState} --> {condition}");
+                        Logger?.LogDebug($"Ignore rule '{name}': {oldState} --> {newState}");
                     }
-                } else {
-                    Logger?.LogDebug($"Ignore rule '{name}': ??? --> {condition}");
+                } catch(Exception e) {
+                    Logger?.LogError(e, $"Exception while evaluating rule condition '{name}' (new state: {newState}, old state: {oldState})");
                 }
             } else {
-                Logger?.LogDebug($"Record rule '{name}' for the first time (condition: {condition})");
+                Logger?.LogDebug($"Set rule '{name}' state for the first time (state: {newState})");
             }
 
             // record current condition state
-            _rules[callback] = condition;
+            _rules[name] = newState;
         }
     }
 }

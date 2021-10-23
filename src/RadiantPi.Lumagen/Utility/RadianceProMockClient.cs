@@ -21,6 +21,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using RadiantPi.Lumagen.Model;
 
@@ -194,9 +195,34 @@ namespace RadiantPi.Lumagen.Utility {
             return Task.CompletedTask;
         }
 
-        public Task SelectMemory(RadianceProMemory memory) {
+        public Task SelectMemoryAsync(RadianceProMemory memory) {
             CheckNotDisposed();
             return Task.CompletedTask;
+        }
+
+        public Task ShowMessageAsync(string message, int seconds) {
+
+            // TODO: why duplicate logic, can't we just use the non-mock client instead?
+
+            CheckNotDisposed();
+            if(message is null) {
+                throw new ArgumentNullException(nameof(message));
+            }
+            if(message.Any(c => (c < 0x20) || (c > 0x7A))) {
+                throw new ArgumentOutOfRangeException(nameof(message), "characters must be >= ' ' (0x20) and <= 'z' (0x7A)");
+            }
+            if(message.Length > 60) {
+                throw new ArgumentOutOfRangeException(nameof(message), "string length must be <= 60 characters");
+            }
+            if((seconds < 0) || (seconds > 9)) {
+                throw new ArgumentOutOfRangeException(nameof(seconds), "value must be >= 0 and <= 9");
+            }
+            return SendAsync($"ZT{seconds}{message}\r", expectResponse: false);
+        }
+
+        public Task ClearMessageAsync() {
+            CheckNotDisposed();
+            return SendAsync($"ZC", expectResponse: false);
         }
 
         public Task<string> SendAsync(string command, bool expectResponse)
@@ -205,6 +231,9 @@ namespace RadiantPi.Lumagen.Utility {
         public void Dispose() => _disposed = true;
 
         private void CheckNotDisposed() {
+
+            // TODO: this check should be in the non-mock client as well
+
             if(_disposed) {
                 throw new ObjectDisposedException("client was disposed");
             }

@@ -72,7 +72,7 @@ namespace RadiantPi.Trinnov.Altitude {
         }
 
         private void MessageReceived(object sender, TelnetMessageReceivedEventArgs args) {
-            _logger.LogDebug($"received: {args.Message}");
+            _logger?.LogDebug($"received: {args.Message}");
 
             // check for audio event
             var match = _audioModeRegex.Match(args.Message);
