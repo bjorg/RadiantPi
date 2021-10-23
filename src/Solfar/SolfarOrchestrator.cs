@@ -27,21 +27,23 @@ namespace Solfar {
             _radianceProClient = radianceProClient ?? throw new ArgumentNullException(nameof(radianceProClient));
             _cledisClient = cledisClient ?? throw new ArgumentNullException(nameof(cledisClient));
             _trinnovClient = altitudeClient ?? throw new ArgumentNullException(nameof(altitudeClient));
-
-            // subscribing to events
-            _radianceProClient.ModeInfoChanged += OnModeInfoChanged;
-            _trinnovClient.AudioDecoderChanged += OnAudioCodecChanged;
         }
 
         //--- Methods ---
+        public override void Start() {
+            base.Start();
+            _radianceProClient.ModeInfoChanged += EventListener;
+            _trinnovClient.AudioDecoderChanged += EventListener;
+        }
+
         public override void Stop() {
-            _trinnovClient.AudioDecoderChanged -= OnAudioCodecChanged;
-            _radianceProClient.ModeInfoChanged -= OnModeInfoChanged;
+            _trinnovClient.AudioDecoderChanged -= EventListener;
+            _radianceProClient.ModeInfoChanged -= EventListener;
             base.Stop();
         }
 
-        protected override bool ProcessChanges(object change) {
-            switch(change) {
+        protected override bool ApplyEvent(object sender, EventArgs args) {
+            switch(args) {
             case ModeInfoChangedEventArgs modeInfoDetailsEventArgs:
                 _radianceProModeInfo = modeInfoDetailsEventArgs.ModeInfo;
                 return true;
@@ -49,36 +51,32 @@ namespace Solfar {
                 _altitudeAudioDecoder = audioDecoderChangedEventArgs;
                 return true;
             default:
-                Logger.LogWarning($"unrecognized channel event: {change?.GetType().FullName}");
+                Logger.LogWarning($"unrecognized channel event: {args?.GetType().FullName}");
                 return false;
             }
         }
 
-        protected override async Task EvaluateChangeAsync() {
+        protected override void Evaluate() {
 
             // fetch values
-            var fitHeight = StringComparer.Ordinal.Compare(_radianceProModeInfo.DetectedAspectRatio, "178") < 0;
-            var fitWidth = (StringComparer.Ordinal.Compare(_radianceProModeInfo.DetectedAspectRatio, "178") >= 0)
-                && (StringComparer.Ordinal.Compare(_radianceProModeInfo.DetectedAspectRatio, "200") <= 0);
-            var fitNative = StringComparer.Ordinal.Compare(_radianceProModeInfo.DetectedAspectRatio, "200") > 0;
+            var fitHeight = LessThan(_radianceProModeInfo.DetectedAspectRatio, "178");
+            var fitWidth = GreaterThanOrEqual(_radianceProModeInfo.DetectedAspectRatio, "178")
+                && LessThanOrEqual(_radianceProModeInfo.DetectedAspectRatio, "200");
+            var fitNative = GreaterThan(_radianceProModeInfo.DetectedAspectRatio, "200");
             var isHdr = _radianceProModeInfo.SourceDynamicRange == RadianceProDynamicRange.HDR;
             var is3D = (_radianceProModeInfo.Source3DMode != RadiancePro3D.Undefined) && (_radianceProModeInfo.Source3DMode != RadiancePro3D.Off);
             var isGameSource = _radianceProModeInfo.PhysicalInputSelected is 2 or 4 or 6 or 8;
             var isGui = _radianceProModeInfo.SourceVerticalRate == "050";
 
             // evaluate rules
-            await DoAsync("Switch to 3D", is3D, SwitchTo3DAsync);
-            await DoAsync("Switch to 2D", !is3D, SwitchTo2DAsync);
-            await DoAsync("Fit Height", !is3D && !isGameSource && (fitHeight || isGui), FitHeightAsync);
-            await DoAsync("Fit Width", !is3D && !isGameSource && fitWidth && !isGui, FitWidthAsync);
-            await DoAsync("Fit Native", !is3D && !isGameSource && fitNative && !isGui, FitNativeAsync);
+            OnTrue("Switch to 2D", !is3D, SwitchTo2DAsync);
+            OnTrue("Switch to 3D", is3D, SwitchTo3DAsync);
+            OnTrue("Switch to SDR", !is3D && !isHdr, SwitchToSDRAsync);
+            OnTrue("Switch to HDR", !is3D && isHdr, SwitchToHDRAsync);
+            OnTrue("Fit Height", !is3D && !isGameSource && (fitHeight || isGui), FitHeightAsync);
+            OnTrue("Fit Width", !is3D && !isGameSource && fitWidth && !isGui, FitWidthAsync);
+            OnTrue("Fit Native", !is3D && !isGameSource && fitNative && !isGui, FitNativeAsync);
         }
-
-        private void OnModeInfoChanged(object sender, ModeInfoChangedEventArgs args)
-            => NotifyOfChanges(args);
-
-        private void OnAudioCodecChanged(object sender, AudioDecoderChangedEventArgs args)
-            => NotifyOfChanges(args);
 
         private async Task SwitchTo3DAsync() {
             await _cledisClient.SetInputAsync(SonyCledisInput.Hdmi2);
