@@ -36,7 +36,7 @@ namespace Solfar {
                 trinnovClient,
                 logger
             );
-            orchestrator.Start();
+            await orchestrator.Start();
             _ = Task.Run(() => {
                 Console.ReadLine();
                 orchestrator.Stop();

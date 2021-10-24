@@ -34,8 +34,8 @@ namespace RadiantPi.Controller {
         //--- Methods ---
         public virtual void EventListener(object? sender, EventArgs args) => _channel.Writer.TryWrite((Sender: sender, EventArgs: args));
 
-        public virtual void Start()
-            => Task.Run((Func<Task>)(async () => {
+        public virtual Task Start() {
+            Task.Run((Func<Task>)(async () => {
 
                 // process all changes in the channel
                 await foreach(var change in _channel.Reader.ReadAllAsync()) {
@@ -47,6 +47,8 @@ namespace RadiantPi.Controller {
                 // signal the orchestrator is done
                 _taskCompletionSource.SetResult();
             }));
+            return Task.CompletedTask;
+        }
 
         public virtual void Stop() => _channel.Writer.Complete();
         public virtual Task WaitAsync() => _taskCompletionSource.Task;

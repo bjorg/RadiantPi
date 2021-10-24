@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Controller;
 using RadiantPi.Lumagen;
@@ -30,10 +31,11 @@ namespace Solfar {
         }
 
         //--- Methods ---
-        public override void Start() {
-            base.Start();
+        public override async Task Start() {
+            await base.Start();
             _radianceProClient.ModeInfoChanged += EventListener;
             _trinnovClient.AudioDecoderChanged += EventListener;
+            await _trinnovClient.ConnectAsync();
         }
 
         public override void Stop() {
@@ -119,17 +121,23 @@ namespace Solfar {
                 case "PCM":
                     decoder = "";
                     break;
+                case "DD":
+                    decoder = "Dolby Digital";
+                    break;
                 case "TrueHD":
                     decoder = "Dolby TrueHD";
                     break;
                 case "ATMOS TrueHD":
                     decoder = "Dolby ATMOS";
+                    upmixer = "";
                     break;
+                case "DTS":
                 case "DTS-HD MA":
                     decoder = "DTS";
                     break;
                 case "DTS:X MA":
                     decoder = "DTS:X";
+                    upmixer = "";
                     break;
                 default:
                     Logger?.LogWarning($"Unrecognized decoder: '{state.Decoder}'");

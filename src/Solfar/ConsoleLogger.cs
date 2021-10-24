@@ -11,18 +11,34 @@ namespace Solfar {
         }
 
         bool ILogger.IsEnabled(LogLevel logLevel) {
-            return logLevel >= LogLevel.Information;
+            return true;
+            // return logLevel >= LogLevel.Information;
         }
 
         void ILogger.Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) {
-            if(logLevel >= LogLevel.Debug) {
-                var foregroundColor = Console.ForegroundColor;
-                try {
+            var foregroundColor = Console.ForegroundColor;
+            try {
+                switch(logLevel) {
+                case LogLevel.Trace:
+                case LogLevel.Debug:
                     Console.ForegroundColor = ConsoleColor.DarkGray;
-                    Console.WriteLine($"{logLevel.ToString().ToUpper()}: {formatter(state, exception)}");
-                } finally {
-                    Console.ForegroundColor = foregroundColor;
+                    break;
+                case LogLevel.Warning:
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    break;
+                case LogLevel.Error:
+                case LogLevel.Critical:
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    break;
+                case LogLevel.Information:
+                default:
+
+                    // nothing to do
+                    break;
                 }
+                Console.WriteLine($"{logLevel.ToString().ToUpper()}: {formatter(state, exception)}");
+            } finally {
+                Console.ForegroundColor = foregroundColor;
             }
         }
     }
