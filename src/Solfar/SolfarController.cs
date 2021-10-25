@@ -23,7 +23,7 @@ namespace Solfar {
             IRadiancePro radianceProClient,
             ISonyCledis cledisClient,
             ITrinnovAltitude altitudeClient,
-            ILogger? logger = null
+            ILogger<SolfarController>? logger = null
         ) : base(logger) {
             _radianceProClient = radianceProClient ?? throw new ArgumentNullException(nameof(radianceProClient));
             _cledisClient = cledisClient ?? throw new ArgumentNullException(nameof(cledisClient));

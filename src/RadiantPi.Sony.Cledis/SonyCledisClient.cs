@@ -25,9 +25,9 @@ namespace RadiantPi.Sony.Cledis {
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
 
         //--- Constructors ---
-        public SonyCledisClient(SonyCledisClientConfig config, ILogger logger = null) : this(new TelnetClient(config.Host, config.Port ?? 53595, logger), logger) { }
+        public SonyCledisClient(SonyCledisClientConfig config, ILogger<SonyCledisClient> logger = null) : this(new TelnetClient(config.Host, config.Port ?? 53595, logger), logger) { }
 
-        public SonyCledisClient(ITelnet telnet, ILogger logger) : base(logger) {
+        public SonyCledisClient(ITelnet telnet, ILogger<SonyCledisClient> logger) : base(logger) {
             _telnet = telnet ?? throw new ArgumentNullException(nameof(telnet));
             _telnet.ConfirmConnectionAsync = ConfirmConnectionAsync;
         }

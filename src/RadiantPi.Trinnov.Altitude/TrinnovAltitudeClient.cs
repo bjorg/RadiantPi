@@ -34,9 +34,9 @@ namespace RadiantPi.Trinnov.Altitude {
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
 
         //--- Constructors ---
-        public TrinnovAltitudeClient(TrinnovAltitudeClientConfig config, ILogger logger = null) : this(new TelnetClient(config.Host, config.Port ?? 53595, logger), logger) { }
+        public TrinnovAltitudeClient(TrinnovAltitudeClientConfig config, ILogger<TrinnovAltitudeClient> logger = null) : this(new TelnetClient(config.Host, config.Port ?? 53595, logger), logger) { }
 
-        public TrinnovAltitudeClient(ITelnet telnet, ILogger logger) {
+        public TrinnovAltitudeClient(ITelnet telnet, ILogger<TrinnovAltitudeClient> logger) {
             _logger = logger;
             _telnet = telnet ?? throw new ArgumentNullException(nameof(telnet));
             _telnet.ConfirmConnectionAsync = ConfirmConnectionAsync;
@@ -48,6 +48,11 @@ namespace RadiantPi.Trinnov.Altitude {
 
         //--- Methods ---
         public async Task ConnectAsync() {
+
+            // TODO: can we get rid of an explicit invocation of `ConnectAsync`?
+            //  ==> need to solve the problem that Trinnov sends status info as soon as connected,
+            //      which means we have to subscribe to events before we connect.
+
             if(await _telnet.ConnectAsync().ConfigureAwait(false)) {
                 await _telnet.SendAsync($"id radiant_pi_{DateTimeOffset.UtcNow.Ticks}").ConfigureAwait(false);
             }

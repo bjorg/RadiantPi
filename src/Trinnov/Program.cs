@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Trinnov.Altitude;
 
@@ -7,69 +8,51 @@ namespace Trinnov {
 
     public class Program {
 
-        //--= Types ---
-        public class ConsoleLogger : ILogger {
-
-            public IDisposable BeginScope<TState>(TState state) {
-                throw new NotImplementedException();
-            }
-
-            public bool IsEnabled(LogLevel logLevel) {
-                return logLevel >= LogLevel.Information;
-            }
-
-            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter) {
-                if(logLevel >= LogLevel.Debug) {
-                    var foregroundColor = Console.ForegroundColor;
-                    try {
-                        Console.ForegroundColor = ConsoleColor.DarkGray;
-                        Console.WriteLine($"{logLevel.ToString().ToUpper()}: {formatter(state, exception)}");
-                    } finally {
-                        Console.ForegroundColor = foregroundColor;
-                    }
-                }
-            }
-        }
-
         //--- Class Methods ---
         public static async Task Main(string[] args) {
-            var ip = "192.168.1.180";
-            ushort port = 44100;
-            var logger = new ConsoleLogger();
 
-            // initialize Trinnov client
-            using TrinnovAltitudeClient trinnovClient = new(new TrinnovAltitudeClientConfig {
-                Host = ip,
-                Port = port
-            }, logger);
-            trinnovClient.AudioDecoderChanged += AudioCodecChanged;
-            await trinnovClient.ConnectAsync();
+            // define services
+            var services = new ServiceCollection()
+                .AddLogging(configure =>configure.AddConsole())
+                .AddSingleton(services => new TrinnovAltitudeClientConfig {
+                    Host = "192.168.1.180",
+                    Port = 44100
+                })
+                .AddSingleton<ITrinnovAltitude, TrinnovAltitudeClient>()
+                .AddSingleton<Program>();
 
-            // wait for keyboard input
-            while(true) {
-                var command = Console.ReadLine();
-                switch(command) {
-                case "q":
-                case "quit":
-                case "bye":
-                    goto done;
-                case "+":
-                    await trinnovClient.AdjustVolumeAsync(0.5f);
-                    break;
-                case "-":
-                    await trinnovClient.AdjustVolumeAsync(-0.5f);
-                    break;
-                case "":
-                    continue;
-                }
-                // await client.SendAsync(command);
-            }
-        done:
-            trinnovClient.AudioDecoderChanged -= AudioCodecChanged;
+            // execute program
+            using var serviceProvider = services.BuildServiceProvider();
+            await serviceProvider.GetRequiredService<Program>().Run();
         }
 
-        private static void AudioCodecChanged(object sender, AudioDecoderChangedEventArgs args) {
-            Console.WriteLine($"==> AUDIO: Decoder='{args.Decoder}' Upmixer='{args.Upmixer}'");
+        //--- Fields ---
+        private readonly ITrinnovAltitude _trinnovClient;
+
+        //--- Constructors ---
+        public Program(ITrinnovAltitude trinnovClient, ILogger<Program> logger = null) {
+            _trinnovClient = trinnovClient ?? throw new ArgumentNullException(nameof(trinnovClient));
+            Logger = logger;
         }
+
+        //--- Properties ---
+        public ILogger<Program> Logger { get; }
+
+        //--- Methods ---
+        public async Task Run() {
+
+            // start listening to events
+            _trinnovClient.AudioDecoderChanged += AudioCodecChanged;
+
+            // connect and wait until user hits enter key
+            await _trinnovClient.ConnectAsync();
+            Console.ReadLine();
+
+            // stop listening to events
+            _trinnovClient.AudioDecoderChanged -= AudioCodecChanged;
+        }
+
+        private void AudioCodecChanged(object sender, AudioDecoderChangedEventArgs args)
+            => Logger?.LogInformation($"==> AUDIO: Decoder='{args.Decoder}' Upmixer='{args.Upmixer}'");
     }
 }

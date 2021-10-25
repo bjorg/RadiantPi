@@ -43,11 +43,6 @@ namespace RadiantPi.Lumagen {
     public sealed class RadianceProClient : IRadiancePro {
 
         //--- Class Methods ---
-        public static IRadiancePro Initialize(RadianceProClientConfig config, ILogger logger = null)
-            => (config.Mock ?? false)
-                ? new RadianceProMockClient()
-                : new RadianceProClient(config.PortName, config.BaudRate ?? 9600, logger);
-
         private static string ToCommandCode(RadianceProMemory memory, bool allowAll)
             => memory switch {
                 RadianceProMemory.MemoryAll => allowAll
@@ -131,7 +126,9 @@ namespace RadiantPi.Lumagen {
         private ILogger _logger;
 
         //--- Constructors ---
-        public RadianceProClient(SerialPort serialPort, ILogger logger = null) {
+        public RadianceProClient(RadianceProClientConfig config, ILogger<RadianceProClient> logger = null) : this(config.PortName, config.BaudRate ?? 9600, logger) { }
+
+        public RadianceProClient(SerialPort serialPort, ILogger<RadianceProClient> logger = null) {
             _logger = logger;
             _responseReceivedEvent += DispatchEvent;
             _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
@@ -140,7 +137,7 @@ namespace RadiantPi.Lumagen {
             _logger?.LogInformation("serial port is open");
         }
 
-        public RadianceProClient(string portName, int baudRate = 9600, ILogger logger = null) : this(new SerialPort {
+        public RadianceProClient(string portName, int baudRate = 9600, ILogger<RadianceProClient> logger = null) : this(new SerialPort {
             PortName = portName,
             BaudRate = baudRate,
             DataBits = 8,

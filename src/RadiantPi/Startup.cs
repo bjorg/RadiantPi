@@ -23,6 +23,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen;
+using RadiantPi.Lumagen.Utility;
 using RadiantPi.Sony.Cledis;
 using RadiantPi.Sony.Cledis.Mock;
 
@@ -64,7 +65,10 @@ namespace RadiantPi {
                     };
                 }
                 var clientLogger = services.GetService<ILoggerFactory>().CreateLogger<RadianceProClient>();
-                return RadianceProClient.Initialize(config, clientLogger);
+                if(config.Mock ?? false) {
+                    return new RadianceProMockClient();
+                }
+                return new RadianceProClient(config, clientLogger);
             });
 
             // add Sony Cledis client
