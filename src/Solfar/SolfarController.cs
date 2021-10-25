@@ -148,9 +148,9 @@ namespace Solfar {
                 // show message
                 if(decoder != "") {
                     if(upmixer != "") {
-                        await _radianceProClient.ShowMessageAsync($"Audio: {decoder} ({upmixer})", 3);
+                        await _radianceProClient.ShowMessageAsync($"{decoder} ({upmixer})", 3);
                     } else {
-                        await _radianceProClient.ShowMessageAsync($"Audio: {decoder}", 3);
+                        await _radianceProClient.ShowMessageAsync($"{decoder}", 3);
                     }
                 }
             });
