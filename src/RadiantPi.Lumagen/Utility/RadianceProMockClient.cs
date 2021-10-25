@@ -200,7 +200,7 @@ namespace RadiantPi.Lumagen.Utility {
             return Task.CompletedTask;
         }
 
-        public Task ShowMessageAsync(string message, int seconds) {
+        public Task ShowMessageAsync(string message, int delay) {
 
             // TODO: why duplicate logic, can't we just use the non-mock client instead?
 
@@ -214,10 +214,10 @@ namespace RadiantPi.Lumagen.Utility {
             if(message.Length > 60) {
                 throw new ArgumentOutOfRangeException(nameof(message), "string length must be <= 60 characters");
             }
-            if((seconds < 0) || (seconds > 9)) {
-                throw new ArgumentOutOfRangeException(nameof(seconds), "value must be >= 0 and <= 9");
+            if((delay < 0) || (delay > 9)) {
+                throw new ArgumentOutOfRangeException(nameof(delay), "value must be >= 0 and <= 9");
             }
-            return SendAsync($"ZT{seconds}{message}\r", expectResponse: false);
+            return SendAsync($"ZT{delay}{message}\r", expectResponse: false);
         }
 
         public Task ClearMessageAsync() {
