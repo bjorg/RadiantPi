@@ -65,7 +65,7 @@ namespace RadiantPi {
 
                 // initiate client events
                 _logger.LogInformation("get current video mode");
-                await _radianceProClient.GetModeInfoAsync();
+                await _radianceProClient.GetDisplayModeAsync();
 
                 // wait until  we're requested to stop
                 cancellationToken.Register(() => _logger.LogInformation("received stop signal"));

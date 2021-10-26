@@ -56,19 +56,16 @@ namespace RadiantPi {
             services.AddSingleton<IRadiancePro>(services => {
                 var radiancePro = Configuration.GetSection("RadiancePro");
                 var config = radiancePro.Get<RadianceProClientConfig>();
-                if((config is null) || config.Mock.GetValueOrDefault()) {
+                var mock = bool.Parse(radiancePro.GetValue<string>("Mock") ?? "false");
+                if((config is null) || mock) {
 
                     // default to mock configuration when no configuration is found
                     ConsoleLogger.LogWarning("using RadiancePro mock client configuration");
-                    config = new RadianceProClientConfig {
-                        Mock = true
-                    };
-                }
-                var clientLogger = services.GetService<ILoggerFactory>().CreateLogger<RadianceProClient>();
-                if(config.Mock ?? false) {
                     return new RadianceProMockClient();
+                } else {
+                    var clientLogger = services.GetService<ILoggerFactory>().CreateLogger<RadianceProClient>();
+                    return new RadianceProClient(config, clientLogger);
                 }
-                return new RadianceProClient(config, clientLogger);
             });
 
             // add Sony Cledis client

@@ -42,7 +42,7 @@ namespace RadiantPi.Automation {
             //--- Properties ---
             public string Name { get; set; }
             public string ConditionDefinition { get; set; }
-            public ExpressionParser<RadianceProModeInfo>.ExpressionDelegate Function { get; set; }
+            public ExpressionParser<RadianceProDisplayMode>.ExpressionDelegate Function { get; set; }
             public HashSet<string> Dependencies { get; set; }
         }
 
@@ -52,15 +52,15 @@ namespace RadiantPi.Automation {
             public string Name { get; set; }
             public bool Enabled { get; set; }
             public string ConditionDefinition { get; set; }
-            public ExpressionParser<RadianceProModeInfo>.ExpressionDelegate ConditionFunction { get; set; }
+            public ExpressionParser<RadianceProDisplayMode>.ExpressionDelegate ConditionFunction { get; set; }
             public IEnumerable<AutomationAction> Actions { get; set; }
             public HashSet<string> Dependencies { get; set; }
         }
 
         //--- Class Methods ---
-        private HashSet<string> DetectChangedProperties(RadianceProModeInfo current, RadianceProModeInfo last) {
+        private HashSet<string> DetectChangedProperties(RadianceProDisplayMode current, RadianceProDisplayMode last) {
             var result = new HashSet<string>();
-            foreach(var property in typeof(RadianceProModeInfo).GetProperties()) {
+            foreach(var property in typeof(RadianceProDisplayMode).GetProperties()) {
                 var currentPropertyValue = property.GetValue(current);
                 var lastPropertyValue = property.GetValue(last);
                 if(currentPropertyValue is not null) {
@@ -83,7 +83,7 @@ namespace RadiantPi.Automation {
         private ILogger _logger;
         private Dictionary<string, Condition> _conditions = new();
         private List<Rule> _rules = new();
-        private RadianceProModeInfo _lastModeInfo = new();
+        private RadianceProDisplayMode _lastDisplayMode = new();
 
         //--- Constructors ---
         public AutomationController(IRadiancePro client, ISonyCledis cledisClient, AutomationConfig config, ILogger logger = null) {
@@ -97,7 +97,7 @@ namespace RadiantPi.Automation {
 
             // subscribe to mode-changed events
             if(_rules.Any()) {
-                client.ModeInfoChanged += OnModeInfoChanged;
+                client.DisplayModeChanged += OnDisplayModeChanged;
             }
         }
 
@@ -110,7 +110,7 @@ namespace RadiantPi.Automation {
             // parse condition expressions
             foreach(var (conditionName, conditionDefinition) in conditions) {
                 try {
-                    var expression = ExpressionParser<RadianceProModeInfo>.ParseExpression(conditionName, conditionDefinition, out var dependencies);
+                    var expression = ExpressionParser<RadianceProDisplayMode>.ParseExpression(conditionName, conditionDefinition, out var dependencies);
 
                     // verify that the condition does not depend on other conditions
                     foreach(var dependency in dependencies.Where(dependency => dependency.StartsWith("$"))) {
@@ -123,7 +123,7 @@ namespace RadiantPi.Automation {
                     _conditions.Add(conditionName, new() {
                         Name = conditionName,
                         ConditionDefinition = conditionDefinition,
-                        Function = (ExpressionParser<RadianceProModeInfo>.ExpressionDelegate)expression.Compile(),
+                        Function = (ExpressionParser<RadianceProDisplayMode>.ExpressionDelegate)expression.Compile(),
                         Dependencies = dependencies
                     });
                 } catch(Exception e) {
@@ -143,7 +143,7 @@ namespace RadiantPi.Automation {
                 ++ruleIndex;
                 var ruleName = rule.Name ?? $"Rule #{ruleIndex}";
                 try {
-                    var expression = ExpressionParser<RadianceProModeInfo>.ParseExpression(ruleName, rule.Condition, out var dependencies);
+                    var expression = ExpressionParser<RadianceProDisplayMode>.ParseExpression(ruleName, rule.Condition, out var dependencies);
 
                     // flatten condition dependencies
                     var flattenedDependencies = new HashSet<string>();
@@ -174,7 +174,7 @@ namespace RadiantPi.Automation {
                         Name = ruleName,
                         Enabled = rule.Enabled,
                         ConditionDefinition = rule.Condition,
-                        ConditionFunction = (ExpressionParser<RadianceProModeInfo>.ExpressionDelegate)expression.Compile(),
+                        ConditionFunction = (ExpressionParser<RadianceProDisplayMode>.ExpressionDelegate)expression.Compile(),
                         Actions = rule.Actions,
                         Dependencies = flattenedDependencies
                     });
@@ -184,25 +184,25 @@ namespace RadiantPi.Automation {
             }
         }
 
-        private async void OnModeInfoChanged(object sender, ModeInfoChangedEventArgs args) {
+        private async void OnDisplayModeChanged(object sender, DisplayModeChangedEventArgs args) {
             var serializerOptions = new JsonSerializerOptions {
                 WriteIndented = true,
                 Converters = {
                     new JsonStringEnumConverter()
                 }
             };
-            _logger?.LogDebug($"event received: {JsonSerializer.Serialize(args.ModeInfo, serializerOptions)}");
+            _logger?.LogDebug($"event received: {JsonSerializer.Serialize(args.DisplayMode, serializerOptions)}");
 
             // evaluate all conditions
             var conditions = new Dictionary<string, bool>();
             conditions = _conditions
-                .Select(condition => (Name: condition.Key, Value: condition.Value.Function(args.ModeInfo, conditions)))
+                .Select(condition => (Name: condition.Key, Value: condition.Value.Function(args.DisplayMode, conditions)))
                 .ToDictionary(kv => kv.Name, kv => kv.Value);
             _logger?.LogTrace($"conditions: {JsonSerializer.Serialize(conditions, serializerOptions)}");
 
             // detect which properties changed from last mode-info change
-            var changed = DetectChangedProperties(args.ModeInfo, _lastModeInfo);
-            _lastModeInfo = args.ModeInfo;
+            var changed = DetectChangedProperties(args.DisplayMode, _lastDisplayMode);
+            _lastDisplayMode = args.DisplayMode;
             if(!changed.Any()) {
                 _logger?.LogTrace("no changes detected in event");
                 return;
@@ -220,7 +220,7 @@ namespace RadiantPi.Automation {
 
                 // evaluate rule and run actions if the condition passes
                 try {
-                    var eval = rule.ConditionFunction(args.ModeInfo, conditions);
+                    var eval = rule.ConditionFunction(args.DisplayMode, conditions);
                     _logger?.LogDebug($"rule '{rule.Name}': {rule.ConditionDefinition} ==> {eval}");
                     if(eval) {
 
@@ -244,7 +244,7 @@ namespace RadiantPi.Automation {
                     // check what command is requested
                     if(action.RadianceProSend is not null) {
                         _logger?.LogDebug($"RadiancePro.Send: {action.RadianceProSend}");
-                        await _radianceProClient.SendAsync(Unescape(action.RadianceProSend), expectResponse: false).ConfigureAwait(false);
+                        await _radianceProClient.SendAsync(Unescape(action.RadianceProSend)).ConfigureAwait(false);
                     } else if(action.SonyCledisPictureMode is not null) {
                         _logger?.LogDebug($"SonyCledis.PictureMode: {action.SonyCledisPictureMode}");
                         try {
@@ -308,7 +308,7 @@ namespace RadiantPi.Automation {
         //--- IDisposable Members ---
         void IDisposable.Dispose() {
             if(_rules.Any()) {
-                _radianceProClient.ModeInfoChanged -= OnModeInfoChanged;
+                _radianceProClient.DisplayModeChanged -= OnDisplayModeChanged;
             }
         }
     }

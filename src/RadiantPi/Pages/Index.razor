@@ -39,14 +39,14 @@
 <h2>Input</h2>
 <form>
     <fieldset disabled=@Disabled>
-        @RenderLabel("input-status", "Status", ModeInfo?.InputStatus.ToString() ?? "(loading...)")
-        @RenderLabel("input-active-config", "Active Configuration", ModeInfo?.ActiveInputConfigNumber ?? "(loading...)")
+        @RenderLabel("input-status", "Status", DisplayMode?.InputStatus.ToString() ?? "(loading...)")
+        @RenderLabel("input-active-config", "Active Configuration", DisplayMode?.ActiveInputConfigNumber ?? "(loading...)")
         @RenderLabel("source-vertical-resolution", "Vertical Resolution", InputVerticalResolution ?? "(loading...)")
         @RenderLabel("source-vertical-refresh-rate", "Refresh Rate", InputVerticalRefreshRate ?? "(loading...)")
         @RenderLabel("source-raster-aspect-ratio", "Aspect Ratio (Content)", SourceContentAspectRatio ?? "(loading...)")
         @RenderLabel("source-content-aspect-ratio", "Aspect Ratio (Source)", SourceRasterAspectRatio ?? "(loading...)")
-        @RenderLabel("source-dynamic-range", "Dynamic Range", ModeInfo?.SourceDynamicRange.ToString() ?? "(loading...)")
-        @RenderLabel("source-3d-mode", "3D Mode", ModeInfo?.Source3DMode.ToString() ?? "(loading...)")
+        @RenderLabel("source-dynamic-range", "Dynamic Range", DisplayMode?.SourceDynamicRange.ToString() ?? "(loading...)")
+        @RenderLabel("source-3d-mode", "3D Mode", DisplayMode?.Source3DMode.ToString() ?? "(loading...)")
         @RenderLabel("detected-content-aspect-ratio", "Detected Aspect Ratio (Content)", DetectedAspectRatio ?? "(loading...)")
         @RenderLabel("detected-raster-aspect-ratio", "Detected Aspect Ratio (Raster)", DetectedRasterAspectRatio ?? "(loading...)")
     </fieldset>
@@ -59,10 +59,10 @@
         @RenderLabel("output-vertical-resolution", "Vertial Resolution", OutputVerticalResolution ?? "(loading...)")
         @RenderLabel("output-vertical-refresh-rate", "Refresh Rate", OutputVerticalRefreshRate ?? "(loading...)")
         @RenderLabel("output-aspect-ratio-nls", "Aspect Ratio", OutputAspectRatio ?? "(loading...)")
-        @RenderLabel("output-color-space", "Color Space", ModeInfo?.OutputColorSpace.ToString() ?? "(loading...)")
+        @RenderLabel("output-color-space", "Color Space", DisplayMode?.OutputColorSpace.ToString() ?? "(loading...)")
         @RenderLabel("output-cms", "CMS", OutputCmsLabel ?? "(loading...)")
         @RenderLabel("output-style", "Style", OutputStyleLabel ?? "(loading...)")
-        @RenderLabel("output-3d-mode", "3D Mode", ModeInfo?.Output3DMode.ToString() ?? "(loading...)")
+        @RenderLabel("output-3d-mode", "3D Mode", DisplayMode?.Output3DMode.ToString() ?? "(loading...)")
     </fieldset>
 </form>
 
@@ -75,51 +75,51 @@
     //--- Properties ---
     private bool Disabled { get; set; } = true;
 
-    private string InputVerticalResolution => (ModeInfo is not null)
-        ? ToResolution(ModeInfo.SourceVerticalResolution, ModeInfo.SourceVideoMode)
+    private string InputVerticalResolution => (DisplayMode is not null)
+        ? ToResolution(DisplayMode.SourceVerticalResolution, DisplayMode.SourceVideoMode)
         : null;
 
-    private string InputVerticalRefreshRate => (ModeInfo is not null)
-        ? ToRefreshRate(ModeInfo.SourceVerticalRate)
+    private string InputVerticalRefreshRate => (DisplayMode is not null)
+        ? ToRefreshRate(DisplayMode.SourceVerticalRate)
         : null;
 
-    private string SourceContentAspectRatio => (ModeInfo is not null)
-        ? ToAspectRatio(ModeInfo.SourceContentAspectRatio)
+    private string SourceContentAspectRatio => (DisplayMode is not null)
+        ? ToAspectRatio(DisplayMode.SourceContentAspectRatio)
         : null;
 
-    private string DetectedRasterAspectRatio => (ModeInfo is not null)
-        ? ToAspectRatio(ModeInfo.DetectedRasterAspectRatio)
+    private string DetectedRasterAspectRatio => (DisplayMode is not null)
+        ? ToAspectRatio(DisplayMode.DetectedRasterAspectRatio)
         : null;
 
-    private string DetectedAspectRatio => (ModeInfo is not null)
-        ? ToAspectRatio(ModeInfo.DetectedAspectRatio)
+    private string DetectedAspectRatio => (DisplayMode is not null)
+        ? ToAspectRatio(DisplayMode.DetectedAspectRatio)
         : null;
 
-    private string SourceRasterAspectRatio => (ModeInfo is not null)
-        ? ToAspectRatio(ModeInfo.SourceRasterAspectRatio)
+    private string SourceRasterAspectRatio => (DisplayMode is not null)
+        ? ToAspectRatio(DisplayMode.SourceRasterAspectRatio)
         : null;
 
-    private string OutputEnabled => (ModeInfo is not null)
-        ? Convert.ToString(ModeInfo.OutputEnabled, 2).PadLeft(16, '0')
+    private string OutputEnabled => (DisplayMode is not null)
+        ? Convert.ToString(DisplayMode.OutputEnabled, 2).PadLeft(16, '0')
         : null;
 
-    private string OutputVerticalResolution => (ModeInfo is not null)
-        ? ToResolution(ModeInfo.OutputVerticalResolution, ModeInfo.OutputVideoMode)
+    private string OutputVerticalResolution => (DisplayMode is not null)
+        ? ToResolution(DisplayMode.OutputVerticalResolution, DisplayMode.OutputVideoMode)
         : null;
 
-    private string OutputVerticalRefreshRate => (ModeInfo is not null)
-        ? ToRefreshRate(ModeInfo.OutputVerticalRate)
+    private string OutputVerticalRefreshRate => (DisplayMode is not null)
+        ? ToRefreshRate(DisplayMode.OutputVerticalRate)
         : null;
 
-    private string OutputAspectRatio => (ModeInfo is not null)
-        ? ToAspectRatio(ModeInfo.OutputAspectRatio, ModeInfo.OutputNonLinearStretchActive)
+    private string OutputAspectRatio => (DisplayMode is not null)
+        ? ToAspectRatio(DisplayMode.OutputAspectRatio, DisplayMode.OutputNonLinearStretchActive)
         : null;
 
 
     private string OutputCmsLabel { get; set; }
     private string OutputStyleLabel { get; set; }
     private GetDeviceInfoResponse DeviceInfo { get; set; }
-    private RadianceProModeInfo ModeInfo { get; set; }
+    private RadianceProDisplayMode DisplayMode { get; set; }
 
     //--- Methods ---
     protected override async Task OnInitializedAsync() {
@@ -127,13 +127,13 @@
 
         // initialize UI
         DeviceInfo = await Client.GetDeviceInfoAsync();
-        ModeInfo = await Client.GetModeInfoAsync();
-        OutputStyleLabel = await GetStyleLabelAsync(ModeInfo.OutputStyle);
-        OutputCmsLabel = await GetCmsLabelAsync(ModeInfo.OutputCms);
+        DisplayMode = await Client.GetDisplayModeAsync();
+        OutputStyleLabel = await GetStyleLabelAsync(DisplayMode.OutputStyle);
+        OutputCmsLabel = await GetCmsLabelAsync(DisplayMode.OutputCms);
         Disabled = false;
 
         // register event handler for mode changes
-        Client.ModeInfoChanged += OnModeInfoChanged;
+        Client.DisplayModeChanged += OnDisplayModeChanged;
     }
 
     private RenderFragment RenderLabel(string id, string title, string value) {
@@ -178,16 +178,16 @@
             _ => refreshRate
         };
 
-    private void OnModeInfoChanged(object sender, ModeInfoChangedEventArgs args) =>
+    private void OnDisplayModeChanged(object sender, DisplayModeChangedEventArgs args) =>
         InvokeAsync(async () => {
 
             // TODO: remove this code
-            Console.WriteLine("OnModeInfoChanged received");
+            Console.WriteLine("OnDisplayModeChanged received");
 
             // update mode info and refresh state
-            ModeInfo = args.ModeInfo;
-            OutputStyleLabel = await GetStyleLabelAsync(ModeInfo.OutputStyle);
-            OutputCmsLabel = await GetCmsLabelAsync(ModeInfo.OutputCms);
+            DisplayMode = args.DisplayMode;
+            OutputStyleLabel = await GetStyleLabelAsync(DisplayMode.OutputStyle);
+            OutputCmsLabel = await GetCmsLabelAsync(DisplayMode.OutputCms);
             StateHasChanged();
         });
 
@@ -209,7 +209,7 @@
 
     //--- IDisposable Members ---
     void IDisposable.Dispose() {
-        Console.WriteLine("OnModeInfoChanged handler removed");
-        Client.ModeInfoChanged -= OnModeInfoChanged;
+        Console.WriteLine("OnDisplayModeChanged handler removed");
+        Client.DisplayModeChanged -= OnDisplayModeChanged;
     }
 }

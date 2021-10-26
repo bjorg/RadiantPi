@@ -15,7 +15,7 @@ namespace Solfar {
         private IRadiancePro _radianceProClient;
         private ISonyCledis _cledisClient;
         protected ITrinnovAltitude _trinnovClient;
-        private RadianceProModeInfo _radianceProModeInfo = new();
+        private RadianceProDisplayMode _radianceProDisplayMode = new();
         private AudioDecoderChangedEventArgs _altitudeAudioDecoder = new();
 
         //--- Constructors ---
@@ -33,21 +33,21 @@ namespace Solfar {
         //--- Methods ---
         public override async Task Start() {
             await base.Start();
-            _radianceProClient.ModeInfoChanged += EventListener;
+            _radianceProClient.DisplayModeChanged += EventListener;
             _trinnovClient.AudioDecoderChanged += EventListener;
             await _trinnovClient.ConnectAsync();
         }
 
         public override void Stop() {
             _trinnovClient.AudioDecoderChanged -= EventListener;
-            _radianceProClient.ModeInfoChanged -= EventListener;
+            _radianceProClient.DisplayModeChanged -= EventListener;
             base.Stop();
         }
 
         protected override bool ApplyEvent(object? sender, EventArgs args) {
             switch(args) {
-            case ModeInfoChangedEventArgs modeInfoDetailsEventArgs:
-                _radianceProModeInfo = modeInfoDetailsEventArgs.ModeInfo;
+            case DisplayModeChangedEventArgs displayModeChangedEventArgs:
+                _radianceProDisplayMode = displayModeChangedEventArgs.DisplayMode;
                 return true;
             case AudioDecoderChangedEventArgs audioDecoderChangedEventArgs:
                 _altitudeAudioDecoder = audioDecoderChangedEventArgs;
@@ -61,14 +61,14 @@ namespace Solfar {
         protected override void Evaluate() {
 
             // display conditions
-            var fitHeight = LessThan(_radianceProModeInfo.DetectedAspectRatio, "178");
-            var fitWidth = GreaterThanOrEqual(_radianceProModeInfo.DetectedAspectRatio, "178")
-                && LessThanOrEqual(_radianceProModeInfo.DetectedAspectRatio, "200");
-            var fitNative = GreaterThan(_radianceProModeInfo.DetectedAspectRatio, "200");
-            var isHdr = _radianceProModeInfo.SourceDynamicRange == RadianceProDynamicRange.HDR;
-            var is3D = (_radianceProModeInfo.Source3DMode != RadiancePro3D.Undefined) && (_radianceProModeInfo.Source3DMode != RadiancePro3D.Off);
-            var isGameSource = _radianceProModeInfo.PhysicalInputSelected is 2 or 4 or 6 or 8;
-            var isGui = _radianceProModeInfo.SourceVerticalRate == "050";
+            var fitHeight = LessThan(_radianceProDisplayMode.DetectedAspectRatio, "178");
+            var fitWidth = GreaterThanOrEqual(_radianceProDisplayMode.DetectedAspectRatio, "178")
+                && LessThanOrEqual(_radianceProDisplayMode.DetectedAspectRatio, "200");
+            var fitNative = GreaterThan(_radianceProDisplayMode.DetectedAspectRatio, "200");
+            var isHdr = _radianceProDisplayMode.SourceDynamicRange == RadianceProDynamicRange.HDR;
+            var is3D = (_radianceProDisplayMode.Source3DMode != RadiancePro3D.Undefined) && (_radianceProDisplayMode.Source3DMode != RadiancePro3D.Off);
+            var isGameSource = _radianceProDisplayMode.PhysicalInputSelected is 2 or 4 or 6 or 8;
+            var isGui = _radianceProDisplayMode.SourceVerticalRate == "050";
 
             // display rules
             OnTrue("Switch to 2D", !is3D, async () => {
