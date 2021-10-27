@@ -34,12 +34,13 @@ namespace RadiantPi.Trinnov.Altitude {
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
 
         //--- Constructors ---
-        public TrinnovAltitudeClient(TrinnovAltitudeClientConfig config, ILogger<TrinnovAltitudeClient> logger = null) : this(new TelnetClient(config.Host, config.Port ?? 53595, logger), logger) { }
+        public TrinnovAltitudeClient(TrinnovAltitudeClientConfig config, ILoggerFactory loggerFactory = null)
+            : this(new TelnetClient(config.Host, config.Port ?? 44100, loggerFactory?.CreateLogger<TelnetClient>()), loggerFactory?.CreateLogger<TrinnovAltitudeClient>()) { }
 
         public TrinnovAltitudeClient(ITelnet telnet, ILogger<TrinnovAltitudeClient> logger) {
             _logger = logger;
             _telnet = telnet ?? throw new ArgumentNullException(nameof(telnet));
-            _telnet.ConfirmConnectionAsync = ConfirmConnectionAsync;
+            _telnet.ValidateConnectionAsync = ValidateConnectionAsync;
             _telnet.MessageReceived += MessageReceived;
         }
 
@@ -53,9 +54,7 @@ namespace RadiantPi.Trinnov.Altitude {
             //  ==> need to solve the problem that Trinnov sends status info as soon as connected,
             //      which means we have to subscribe to events before we connect.
 
-            if(await _telnet.ConnectAsync().ConfigureAwait(false)) {
-                await _telnet.SendAsync($"id radiant_pi_{DateTimeOffset.UtcNow.Ticks}").ConfigureAwait(false);
-            }
+            await _telnet.ConnectAsync().ConfigureAwait(false);
         }
 
         public Task SetVolumeAsync(float volume) => _telnet.SendAsync($"volume {volume}");
@@ -66,14 +65,15 @@ namespace RadiantPi.Trinnov.Altitude {
             _telnet.Dispose();
         }
 
-        private async Task ConfirmConnectionAsync(ITelnet client, TextReader reader, TextWriter writer) {
+        private async Task ValidateConnectionAsync(ITelnet client, TextReader reader, TextWriter writer) {
             var handshake = await reader.ReadLineAsync();
 
-            // the device sends a welcome text to identify it
+            // the Trinnov Altitude sends a welcome text to identify itself
             if(!handshake.StartsWith("Welcome on Trinnov Optimizer (", StringComparison.Ordinal)) {
                 throw new NotSupportedException("Unrecognized device");
             }
             _logger?.LogDebug("Trinnov Altitude connection established");
+            await writer.WriteLineAsync($"id radiant_pi_trinnov_{DateTimeOffset.UtcNow.Ticks}").ConfigureAwait(false);
         }
 
         private void MessageReceived(object sender, TelnetMessageReceivedEventArgs args) {

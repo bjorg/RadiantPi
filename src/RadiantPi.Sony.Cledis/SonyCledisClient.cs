@@ -25,11 +25,12 @@ namespace RadiantPi.Sony.Cledis {
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
 
         //--- Constructors ---
-        public SonyCledisClient(SonyCledisClientConfig config, ILogger<SonyCledisClient> logger = null) : this(new TelnetClient(config.Host, config.Port ?? 53595, logger), logger) { }
+        public SonyCledisClient(SonyCledisClientConfig config, ILoggerFactory loggerFactory = null) :
+            this(new TelnetClient(config.Host, config.Port ?? 53595, loggerFactory?.CreateLogger<TelnetClient>()), loggerFactory?.CreateLogger<SonyCledisClient>()) { }
 
         public SonyCledisClient(ITelnet telnet, ILogger<SonyCledisClient> logger) : base(logger) {
             _telnet = telnet ?? throw new ArgumentNullException(nameof(telnet));
-            _telnet.ConfirmConnectionAsync = ConfirmConnectionAsync;
+            _telnet.ValidateConnectionAsync = ValidateConnectionAsync;
         }
 
         //--- Methods ---
@@ -181,7 +182,7 @@ namespace RadiantPi.Sony.Cledis {
             }
         }
 
-        private async Task ConfirmConnectionAsync(ITelnet client, TextReader reader, TextWriter writer) {
+        private async Task ValidateConnectionAsync(ITelnet client, TextReader reader, TextWriter writer) {
             var handshake = await reader.ReadLineAsync();
 
             // the controller sends 'NOKEY' when there is no need for authentication

@@ -78,8 +78,8 @@ namespace RadiantPi {
                     ConsoleLogger.LogWarning("using Sony Cledis mock client configuration");
                     return new SonyCledisMockClient();
                 }
-                var clientLogger = services.GetService<ILoggerFactory>().CreateLogger<SonyCledisClient>();
-                return new SonyCledisClient(config, clientLogger);
+                var loggerFactory = services.GetService<ILoggerFactory>();
+                return new SonyCledisClient(config, loggerFactory);
             });
 
             // add RadiancePro automation service
