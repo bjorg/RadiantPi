@@ -16,7 +16,7 @@ namespace Solfar {
         private ISonyCledis _cledisClient;
         protected ITrinnovAltitude _trinnovClient;
         private RadianceProDisplayMode _radianceProDisplayMode = new();
-        private AudioDecoderChangedEventArgs _altitudeAudioDecoder = new();
+        private AudioDecoderChangedEventArgs _altitudeAudioDecoder = new("", "");
 
         //--- Constructors ---
         public SolfarController(
@@ -123,6 +123,9 @@ namespace Solfar {
                     break;
                 case "DD":
                     decoder = "Dolby Digital";
+                    break;
+                case "DD+":
+                    decoder = "Dolby Digital+";
                     break;
                 case "TrueHD":
                     decoder = "Dolby TrueHD";
