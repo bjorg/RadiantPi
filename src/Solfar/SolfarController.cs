@@ -150,6 +150,7 @@ namespace Solfar {
 
                 // show message
                 if(decoder != "") {
+                    await _radianceProClient.SendAsync("!");
                     if(upmixer != "") {
                         await _radianceProClient.ShowMessageAsync($"{decoder} ({upmixer})", 2);
                     } else {
