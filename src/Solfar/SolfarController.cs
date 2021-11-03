@@ -132,15 +132,16 @@ namespace Solfar {
                     break;
                 case "ATMOS TrueHD":
                     decoder = "Dolby ATMOS";
-                    upmixer = "";
                     break;
                 case "DTS":
                 case "DTS-HD MA":
                     decoder = "DTS";
                     break;
+                case "DTS-HD MA Auro-3D":
+                    decoder = "Auro-3D";
+                    break;
                 case "DTS:X MA":
                     decoder = "DTS:X";
-                    upmixer = "";
                     break;
                 default:
                     Logger?.LogWarning($"Unrecognized decoder: '{state.Decoder}'");
