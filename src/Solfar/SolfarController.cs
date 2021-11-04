@@ -134,8 +134,10 @@ namespace Solfar {
                     decoder = "Dolby ATMOS";
                     break;
                 case "DTS":
-                case "DTS-HD MA":
                     decoder = "DTS";
+                    break;
+                case "DTS-HD MA":
+                    decoder = "DTS-HD";
                     break;
                 case "DTS-HD MA Auro-3D":
                     decoder = "Auro-3D";
