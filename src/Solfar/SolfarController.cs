@@ -122,10 +122,10 @@ namespace Solfar {
                     decoder = "";
                     break;
                 case "DD":
-                    decoder = "Dolby Digital";
+                    decoder = "Dolby";
                     break;
                 case "DD+":
-                    decoder = "Dolby Digital+";
+                    decoder = "Dolby+";
                     break;
                 case "TrueHD":
                     decoder = "Dolby TrueHD";
