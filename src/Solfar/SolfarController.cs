@@ -139,6 +139,9 @@ namespace Solfar {
                 case "DTS-HD MA":
                     decoder = "DTS-HD";
                     break;
+                case "DTS-HD HI RES":
+                    decoder = "DTS-HD HiRes";
+                    break;
                 case "DTS-HD MA Auro-3D":
                     decoder = "Auro-3D";
                     break;
