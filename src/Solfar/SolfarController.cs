@@ -130,8 +130,11 @@ namespace Solfar {
                 case "TrueHD":
                     decoder = "Dolby TrueHD";
                     break;
+                case "ATMOS DD+":
+                    decoder = "Dolby+ ATMOS";
+                    break;
                 case "ATMOS TrueHD":
-                    decoder = "Dolby ATMOS";
+                    decoder = "Dolby TrueHD ATMOS";
                     break;
                 case "DTS":
                     decoder = "DTS";
