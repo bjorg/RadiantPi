@@ -17,7 +17,7 @@
     <PackageTags>Lumagen;RadiancePro;Blazor</PackageTags>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../RadiantPi.Sony.Cledis/RadiantPi.Sony.Cledis.csproj"/>
+    <PackageReference Include="RadiantPi.Sony.Cledis" Version="1.0.*"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="RadiantPi.Lumagen" Version="1.1.*"/>
