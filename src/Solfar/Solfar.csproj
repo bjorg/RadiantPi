@@ -8,11 +8,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../RadiantPi.Sony.Cledis/RadiantPi.Sony.Cledis.csproj"/>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="5.0.0"/>
     <PackageReference Include="RadiantPi.Lumagen" Version="1.1.*"/>
     <PackageReference Include="RadiantPi.Trinnov.Altitude" Version="1.0.*"/>
+    <PackageReference Include="RadiantPi.Sony.Cledis" Version="1.0.*"/>
   </ItemGroup>
 </Project>
